@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URL Info - Cultura Immersiva Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .url {
+            background: #e8f5e9;
+            padding: 15px;
+            border-left: 4px solid #4caf50;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .wrong {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+        .step {
+            background: #fff3e0;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 3px solid #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>📍 DOVE TROVARE I NUOVI CAMPI</h1>
+
+        <h2>✅ URL CORRETTO per vedere i campi:</h2>
+        <div class="url">
+            https://culturaimmersiva-it.web.app/admin/city/new
+        </div>
+        <p><strong>Oppure per modificare Alghero:</strong></p>
+        <div class="url">
+            https://culturaimmersiva-it.web.app/admin/city/alghero
+        </div>
+
+        <h2>❌ URL SBAGLIATO (non vedrai i campi qui):</h2>
+        <div class="url wrong">
+            https://culturaimmersiva-it.web.app/admin
+        </div>
+        <div class="url wrong">
+            https://culturaimmersiva-it.web.app/admin/dashboard
+        </div>
+        <p>^ Queste pagine mostrano solo la LISTA delle città, non il form di modifica</p>
+
+        <h2>🔍 COME ACCEDERE AL FORM:</h2>
+        <div class="step">
+            <strong>Opzione 1 - Nuova città:</strong><br>
+            1. Vai su https://culturaimmersiva-it.web.app/admin<br>
+            2. Fai login<br>
+            3. Clicca sul pulsante "Aggiungi Nuova Città"<br>
+            4. Scorri fino alla sezione "Dati Evento"<br>
+            5. I campi sono lì: Durata Esperienza, Prezzo a Coppia, Organizzatore
+        </div>
+
+        <div class="step">
+            <strong>Opzione 2 - Modifica Alghero:</strong><br>
+            1. Vai su https://culturaimmersiva-it.web.app/admin<br>
+            2. Fai login<br>
+            3. Trova la card "Alghero" nella lista<br>
+            4. Clicca sul pulsante BLU "Modifica"<br>
+            5. Scorri fino alla sezione "Dati Evento"<br>
+            6. I campi sono lì dopo "Durata" e prima di "Prezzi"
+        </div>
+
+        <h2>📋 CAMPI NUOVI CHE DOVRESTI VEDERE:</h2>
+        <ul>
+            <li>✓ <strong>Durata Esperienza</strong> (default: 20-30 minuti)</li>
+            <li>✓ <strong>Prezzo a Coppia</strong> (default: 20€)</li>
+            <li>✓ <strong>Nome Organizzatore</strong></li>
+            <li>✓ <strong>Descrizione Organizzatore</strong></li>
+        </ul>
+
+        <p style="color: #d32f2f; font-weight: bold;">
+            ⚠️ SE ANCORA NON LI VEDI:<br>
+            1. Premi CTRL+SHIFT+R (Windows) o CMD+SHIFT+R (Mac) per hard refresh<br>
+            2. Oppure apri una finestra in incognito<br>
+            3. Assicurati di essere nella pagina di MODIFICA città, non nella dashboard!
+        </p>
+    </div>
+</body>
+</html>

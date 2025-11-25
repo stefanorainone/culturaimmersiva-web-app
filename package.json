@@ -1,0 +1,50 @@
+{
+  "name": "culturaimmersiva.it",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "deploy": "npm run build && firebase deploy",
+    "security-check": "node scripts/security-check.js",
+    "create-admin": "node scripts/create-admin.js",
+    "test:security": "node test-security-fixes.js",
+    "test:race": "node test-race-condition-logic.js",
+    "test:all": "npm run test:security && npm run test:race"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0",
+    "dotenv": "^17.2.3",
+    "firebase": "^12.6.0",
+    "firebase-admin": "^13.6.0",
+    "framer-motion": "^12.23.24",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.4",
+    "papaparse": "^5.5.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.9.6",
+    "tailwindcss": "^3.4.18"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.8.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.22",
+    "eslint": "^9.8.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.9",
+    "firebase-tools": "^14.25.1",
+    "globals": "^15.9.0",
+    "postcss": "^8.5.6",
+    "puppeteer": "^24.31.0",
+    "terser": "^5.44.1",
+    "vite": "^5.4.0"
+  }
+}
