@@ -165,6 +165,40 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Per favore seleziona un file immagine valido');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('L\'immagine è troppo grande. Dimensione massima: 5MB');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const cityName = formData.name || 'city';
+      const storageRef = ref(storage, `cities/${Date.now()}_${cityName}.webp`);
+
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+
+      setFormData(prev => ({ ...prev, image: url }));
+      alert('Immagine caricata con successo!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Errore nel caricamento dell\'immagine');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleExperience = (experience) => {
     const isSelected = selectedExperiences.some(exp => exp.id === experience.id);
 
@@ -282,21 +316,58 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
                 </div>
               </div>
 
-              {/* Image Generation */}
+              {/* Image Upload */}
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Immagine Città
                 </label>
-                <button
-                  type="button"
-                  onClick={handleGenerateImage}
-                  disabled={generating || !formData.name}
-                  className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-light disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {generating ? 'Generazione...' : 'Genera Immagine con AI'}
-                </button>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleGenerateImage}
+                    disabled={generating || !formData.name}
+                    className="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {generating ? 'Generazione...' : 'Genera con AI'}
+                  </button>
+
+                  <label className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={loading}
+                      className="hidden"
+                    />
+                    {loading ? 'Caricamento...' : 'Carica Immagine'}
+                  </label>
+
+                  {formData.image && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      Rimuovi
+                    </button>
+                  )}
+                </div>
+
                 {formData.image && (
-                  <img src={formData.image} alt="Preview" className="mt-2 w-48 h-48 object-cover rounded" />
+                  <div className="mt-3">
+                    <img
+                      src={formData.image}
+                      alt="Preview"
+                      className="w-full max-w-md h-48 object-cover rounded-lg border-2 border-gray-300"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Anteprima immagine città</p>
+                  </div>
+                )}
+
+                {!formData.image && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Puoi generare un'immagine con AI o caricare un'immagine personalizzata (max 5MB)
+                  </p>
                 )}
               </div>
             </section>
