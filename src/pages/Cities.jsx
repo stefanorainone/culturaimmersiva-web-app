@@ -122,7 +122,35 @@ const Cities = () => {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {sortedCities.map((city) => {
-                  const isAvailable = availabilityMap[city.id] ?? (city.status === 'available');
+                  const cityStatus = availabilityMap[city.id] || city.status || 'available';
+
+                  const getStatusBadge = (status) => {
+                    switch (status) {
+                      case 'available':
+                        return {
+                          text: 'Posti disponibili',
+                          className: 'bg-green-100 text-green-700'
+                        };
+                      case 'sold-out':
+                        return {
+                          text: 'Esaurito',
+                          className: 'bg-orange-100 text-orange-700'
+                        };
+                      case 'ended':
+                        return {
+                          text: 'Evento Terminato',
+                          className: 'bg-gray-100 text-gray-700'
+                        };
+                      default:
+                        return {
+                          text: 'Non disponibile',
+                          className: 'bg-gray-100 text-gray-700'
+                        };
+                    }
+                  };
+
+                  const statusBadge = getStatusBadge(cityStatus);
+
                   return (
                     <div
                       key={city.id}
@@ -142,12 +170,8 @@ const Cities = () => {
                           <h3 className="text-xl font-bold text-primary mb-1">{city.name}</h3>
                           <p className="text-sm text-gray-600 mb-3">{city.region}</p>
                           <div className="flex items-center justify-between">
-                            <span className={`text-xs px-3 py-1 rounded-full ${
-                              isAvailable
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {isAvailable ? 'Posti disponibili' : 'Non disponibile'}
+                            <span className={`text-xs px-3 py-1 rounded-full ${statusBadge.className}`}>
+                              {statusBadge.text}
                             </span>
                             <span className="text-secondary font-medium text-sm group-hover:translate-x-1 transition-transform">
                               Scopri →
