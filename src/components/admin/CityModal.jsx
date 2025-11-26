@@ -32,6 +32,7 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
   const [generating, setGenerating] = useState(false);
   const [existingCities, setExistingCities] = useState([]);
   const [selectedExperiences, setSelectedExperiences] = useState([]);
+  const [internalCityId, setInternalCityId] = useState(null); // Store cityId internally to prevent loss
   const [formData, setFormData] = useState({
     name: '',
     region: '',
@@ -70,6 +71,8 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
 
   useEffect(() => {
     if (isOpen) {
+      // Save cityId internally when modal opens
+      setInternalCityId(cityId);
       console.log('[CityModal] Opening modal - cityId:', cityId);
       console.log('[CityModal] isUpdate:', !!cityId);
       loadExistingCities();
@@ -80,6 +83,29 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
         console.log('[CityModal] Creating new city');
         autoFillNewCity();
       }
+    } else {
+      // Reset state when modal closes
+      setInternalCityId(null);
+      setSelectedExperiences([]);
+      setFormData({
+        name: '',
+        region: '',
+        status: 'available',
+        image: '',
+        eventData: {
+          title: '',
+          description: '',
+          dates: '',
+          duration: '30 minuti',
+          experienceDuration: '20-30 minuti',
+          location: { name: '', address: '' },
+          organizer: { name: 'Cultura Immersiva', description: '' },
+          pricing: { individual: 10, group: 20, groupSize: 2, currency: '€' },
+          experiences: [],
+          timeSlots: [],
+          booking: { advancePayment: false, limitedSpots: true, whatsapp: true, whatsappNumber: '+39 123 456 7890' }
+        }
+      });
     }
   }, [isOpen, cityId]);
 
@@ -97,12 +123,13 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
     try {
       const cityDoc = await getDoc(doc(db, 'cities', cityId));
       if (cityDoc.exists()) {
-        const data = { id: cityId, ...cityDoc.data() };
-        setFormData(data);
+        const cityData = cityDoc.data();
+        console.log('[CityModal] Loaded city data for:', cityId);
+        setFormData(cityData);
 
         // Load selected experiences
-        if (data.eventData?.experiences) {
-          setSelectedExperiences(data.eventData.experiences.map((exp, idx) => ({
+        if (cityData.eventData?.experiences) {
+          setSelectedExperiences(cityData.eventData.experiences.map((exp, idx) => ({
             ...exp,
             tempId: idx
           })));
@@ -250,12 +277,13 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
       };
 
       console.log('[CityModal] handleSubmit - cityId:', cityId);
-      console.log('[CityModal] handleSubmit - isUpdate:', !!cityId);
+      console.log('[CityModal] handleSubmit - internalCityId:', internalCityId);
+      console.log('[CityModal] handleSubmit - isUpdate:', !!internalCityId);
 
-      if (cityId) {
+      if (internalCityId) {
         // Update existing city
-        console.log('[CityModal] Updating city:', cityId);
-        await setDoc(doc(db, 'cities', cityId), cityData, { merge: true });
+        console.log('[CityModal] Updating city:', internalCityId);
+        await setDoc(doc(db, 'cities', internalCityId), cityData, { merge: true });
         alert(`Città "${formData.name}" aggiornata con successo!`);
       } else {
         // Create new city with slug as ID
