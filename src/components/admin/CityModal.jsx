@@ -228,6 +228,7 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
     try {
       // Prepare experiences from selected predefined ones
       const experiences = selectedExperiences.map(exp => ({
+        id: exp.id,
         name: exp.name,
         duration: exp.duration,
         description: exp.description,
