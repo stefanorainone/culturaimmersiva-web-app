@@ -49,7 +49,7 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
       },
       organizer: {
         name: 'Cultura Immersiva',
-        description: 'Organizzatore ufficiale di esperienze VR culturali'
+        description: ''
       },
       pricing: {
         individual: 10,
@@ -540,7 +540,7 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
                     </label>
                     <input
                       type="text"
-                      value={formData.eventData.organizer?.description || 'Organizzatore ufficiale di esperienze VR culturali'}
+                      value={formData.eventData.organizer?.description || ''}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
                         eventData: {
