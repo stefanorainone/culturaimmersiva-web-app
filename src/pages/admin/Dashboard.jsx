@@ -163,12 +163,22 @@ const Dashboard = () => {
       return;
     }
 
+    console.log('[Dashboard] Deleting city:', cityId);
+
     try {
       await deleteDoc(doc(db, 'cities', cityId));
+      console.log('[Dashboard] City deleted successfully from Firestore');
+
+      // Update local state
       setCities(cities.filter(city => city.id !== cityId));
+      console.log('[Dashboard] Local state updated');
+
+      alert('Città eliminata con successo!');
     } catch (error) {
-      console.error('Error deleting city:', error);
-      alert('Errore durante l\'eliminazione della città');
+      console.error('[Dashboard] Error deleting city:', error);
+      console.error('[Dashboard] Error code:', error.code);
+      console.error('[Dashboard] Error message:', error.message);
+      alert(`Errore durante l'eliminazione della città:\n${error.message || error.code || 'Errore sconosciuto'}`);
     }
   };
 

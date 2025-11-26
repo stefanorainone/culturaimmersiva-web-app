@@ -27,6 +27,26 @@ const generateSlug = (name) => {
     .replace(/-+/g, '-'); // Replace multiple hyphens with single hyphen
 };
 
+// Remove undefined values from object (Firestore doesn't accept undefined)
+const removeUndefined = (obj) => {
+  if (obj === null || obj === undefined) return null;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(removeUndefined);
+
+  const cleaned = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined) continue; // Skip undefined values
+    if (value === null) {
+      cleaned[key] = null;
+    } else if (typeof value === 'object') {
+      cleaned[key] = removeUndefined(value);
+    } else {
+      cleaned[key] = value;
+    }
+  }
+  return cleaned;
+};
+
 const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -266,7 +286,7 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
         image: exp.image
       }));
 
-      const cityData = {
+      let cityData = {
         ...formData,
         eventData: {
           ...formData.eventData,
@@ -279,8 +299,12 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
       console.log('[CityModal] handleSubmit - cityId:', cityId);
       console.log('[CityModal] handleSubmit - internalCityId:', internalCityId);
       console.log('[CityModal] handleSubmit - isUpdate:', !!internalCityId);
-      console.log('[CityModal] handleSubmit - cityData:', cityData);
+      console.log('[CityModal] handleSubmit - cityData (before clean):', cityData);
       console.log('[CityModal] handleSubmit - selectedExperiences:', selectedExperiences);
+
+      // Remove undefined values (Firestore doesn't accept them)
+      cityData = removeUndefined(cityData);
+      console.log('[CityModal] handleSubmit - cityData (after clean):', cityData);
 
       if (internalCityId) {
         // Update existing city
