@@ -70,10 +70,14 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
 
   useEffect(() => {
     if (isOpen) {
+      console.log('[CityModal] Opening modal - cityId:', cityId);
+      console.log('[CityModal] isUpdate:', !!cityId);
       loadExistingCities();
       if (cityId) {
+        console.log('[CityModal] Loading existing city:', cityId);
         loadCity();
       } else {
+        console.log('[CityModal] Creating new city');
         autoFillNewCity();
       }
     }
@@ -245,9 +249,14 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
         updatedAt: serverTimestamp()
       };
 
+      console.log('[CityModal] handleSubmit - cityId:', cityId);
+      console.log('[CityModal] handleSubmit - isUpdate:', !!cityId);
+
       if (cityId) {
         // Update existing city
+        console.log('[CityModal] Updating city:', cityId);
         await setDoc(doc(db, 'cities', cityId), cityData, { merge: true });
+        alert(`Città "${formData.name}" aggiornata con successo!`);
       } else {
         // Create new city with slug as ID
         const slug = generateSlug(formData.name);

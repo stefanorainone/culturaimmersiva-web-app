@@ -207,6 +207,8 @@ const BookingForm = () => {
         bookingData = {
           cityId,
           cityName: city.name,
+          locationName: city.eventData?.location?.name || '',
+          locationAddress: city.eventData?.location?.address || '',
           day: selectedSlot.day,
           date: selectedSlot.date,
           time: selectedSlot.time,

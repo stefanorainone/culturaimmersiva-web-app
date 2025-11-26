@@ -157,7 +157,8 @@ exports.sendBookingConfirmation = functions.https.onCall(async (data, context) =
     const safeEmail = sanitizeHtml(booking.email);
     const safeCityName = sanitizeHtml(booking.cityName);
     const safeWhatsapp = sanitizeHtml(booking.whatsapp || 'Non fornito');
-    const safeDay = sanitizeHtml(booking.day || '');
+    const safeLocationName = sanitizeHtml(booking.locationName || '');
+    const safeLocationAddress = sanitizeHtml(booking.locationAddress || '');
 
     // Create HTML email template
     const emailHtml = `
@@ -293,13 +294,20 @@ exports.sendBookingConfirmation = functions.https.onCall(async (data, context) =
 
         <div class="detail-row">
           <div class="detail-label">📅 Data</div>
-          <div class="detail-value">${safeDay} ${booking.date ? formatDate(booking.date) : ''}</div>
+          <div class="detail-value">${booking.date ? formatDate(booking.date) : ''}</div>
         </div>
 
         <div class="detail-row">
           <div class="detail-label">🕐 Orario</div>
           <div class="detail-value">${sanitizeHtml(booking.time)}</div>
         </div>
+
+        ${safeLocationName ? `
+        <div class="detail-row">
+          <div class="detail-label">📍 Luogo</div>
+          <div class="detail-value">${safeLocationName}${safeLocationAddress ? `<br><span style="font-size: 14px; font-weight: 400; color: #6c757d;">${safeLocationAddress}</span>` : ''}</div>
+        </div>
+        ` : ''}
 
         <div class="detail-row">
           <div class="detail-label">👥 Numero Posti</div>
@@ -365,7 +373,7 @@ exports.sendBookingConfirmation = functions.https.onCall(async (data, context) =
       },
       subject: `✅ Conferma Prenotazione - ${safeCityName}`,
       html: emailHtml,
-      text: `Conferma Prenotazione\n\nCiao ${safeName},\n\nLa tua prenotazione è stata confermata!\n\nEvento: ${safeCityName}\nData: ${safeDay} ${booking.date ? formatDate(booking.date) : ''}\nOrario: ${sanitizeHtml(booking.time)}\nPosti: ${booking.spots}\n\nPer modificare la prenotazione: ${editUrl}\nPer annullare la prenotazione: ${cancelUrl}\n\nGrazie per aver scelto Cultura Immersiva!`
+      text: `Conferma Prenotazione\n\nCiao ${safeName},\n\nLa tua prenotazione è stata confermata!\n\nEvento: ${safeCityName}\nData: ${booking.date ? formatDate(booking.date) : ''}\nOrario: ${sanitizeHtml(booking.time)}${safeLocationName ? `\nLuogo: ${safeLocationName}${safeLocationAddress ? ` - ${safeLocationAddress}` : ''}` : ''}\nPosti: ${booking.spots}\n\nPer modificare la prenotazione: ${editUrl}\nPer annullare la prenotazione: ${cancelUrl}\n\nGrazie per aver scelto Cultura Immersiva!`
     };
 
     // Send email via SendGrid
