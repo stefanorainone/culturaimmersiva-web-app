@@ -279,11 +279,14 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
       console.log('[CityModal] handleSubmit - cityId:', cityId);
       console.log('[CityModal] handleSubmit - internalCityId:', internalCityId);
       console.log('[CityModal] handleSubmit - isUpdate:', !!internalCityId);
+      console.log('[CityModal] handleSubmit - cityData:', cityData);
+      console.log('[CityModal] handleSubmit - selectedExperiences:', selectedExperiences);
 
       if (internalCityId) {
         // Update existing city
         console.log('[CityModal] Updating city:', internalCityId);
         await setDoc(doc(db, 'cities', internalCityId), cityData, { merge: true });
+        console.log('[CityModal] Update successful!');
         alert(`Città "${formData.name}" aggiornata con successo!`);
       } else {
         // Create new city with slug as ID
@@ -307,8 +310,9 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
       onSave();
       onClose();
     } catch (error) {
-      console.error('Error saving city:', error);
-      alert('Errore nel salvataggio della città');
+      console.error('[CityModal] Error saving city:', error);
+      console.error('[CityModal] Error details:', error.message, error.code);
+      alert(`Errore nel salvataggio della città:\n${error.message || error}`);
     } finally {
       setLoading(false);
     }
