@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaVrCardboard, FaSchool, FaLandmark, FaHotel, FaStar, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import { cities } from '../data/cities';
-import { loadCitiesAvailability, sortCitiesByAvailability } from '../utils/cityAvailability';
+import { db } from '../config/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { sortCitiesByAvailability } from '../utils/cityAvailability';
 
 const Home = () => {
   const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
+  const [cities, setCities] = useState([]);
   const [availabilityMap, setAvailabilityMap] = useState({});
   const [loadingCities, setLoadingCities] = useState(true);
 
@@ -103,16 +105,33 @@ const Home = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Carica disponibilità delle città
+  // Carica città da Firestore
   useEffect(() => {
-    const loadAvailability = async () => {
+    const loadCities = async () => {
       setLoadingCities(true);
-      const availability = await loadCitiesAvailability(cities);
-      setAvailabilityMap(availability);
-      setLoadingCities(false);
+      try {
+        const citiesSnapshot = await getDocs(collection(db, 'cities'));
+        const loadedCities = citiesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        setCities(loadedCities);
+
+        // Create availability map from loaded cities
+        const availability = {};
+        loadedCities.forEach(city => {
+          availability[city.id] = city.status || 'available';
+        });
+        setAvailabilityMap(availability);
+      } catch (error) {
+        console.error('Error loading cities:', error);
+      } finally {
+        setLoadingCities(false);
+      }
     };
 
-    loadAvailability();
+    loadCities();
   }, []);
 
   const features = [

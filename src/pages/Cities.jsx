@@ -1,24 +1,48 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { cities, regions } from '../data/cities';
-import { loadCitiesAvailability, sortCitiesByAvailability } from '../utils/cityAvailability';
+import { db } from '../config/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import { sortCitiesByAvailability } from '../utils/cityAvailability';
 
 const Cities = () => {
   const [selectedRegion, setSelectedRegion] = useState('Tutte');
   const [searchTerm, setSearchTerm] = useState('');
+  const [cities, setCities] = useState([]);
+  const [regions, setRegions] = useState(['Tutte']);
   const [availabilityMap, setAvailabilityMap] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Carica disponibilità delle città
+  // Carica città da Firestore
   useEffect(() => {
-    const loadAvailability = async () => {
+    const loadCities = async () => {
       setLoading(true);
-      const availability = await loadCitiesAvailability(cities);
-      setAvailabilityMap(availability);
-      setLoading(false);
+      try {
+        const citiesSnapshot = await getDocs(collection(db, 'cities'));
+        const loadedCities = citiesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        setCities(loadedCities);
+
+        // Extract unique regions from cities
+        const uniqueRegions = [...new Set(loadedCities.map(city => city.region).filter(Boolean))].sort();
+        setRegions(['Tutte', ...uniqueRegions]);
+
+        // Create availability map
+        const availability = {};
+        loadedCities.forEach(city => {
+          availability[city.id] = city.status || 'available';
+        });
+        setAvailabilityMap(availability);
+      } catch (error) {
+        console.error('Error loading cities:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    loadAvailability();
+    loadCities();
   }, []);
 
   const filteredCities = cities

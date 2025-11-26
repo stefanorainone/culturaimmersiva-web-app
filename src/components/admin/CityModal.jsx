@@ -15,6 +15,18 @@ import { predefinedExperiences, defaultCityExperiences } from '../../data/predef
 import { generateCityImage } from '../../services/imageGenerator';
 import TimeSlotGenerator from './TimeSlotGenerator';
 
+// Generate URL-friendly slug from city name
+const generateSlug = (name) => {
+  return name
+    .toLowerCase()
+    .normalize('NFD') // Decompose accented characters
+    .replace(/[\u0300-\u036f]/g, '') // Remove accents
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .trim()
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-'); // Replace multiple hyphens with single hyphen
+};
+
 const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -233,10 +245,25 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
       };
 
       if (cityId) {
+        // Update existing city
         await setDoc(doc(db, 'cities', cityId), cityData, { merge: true });
       } else {
+        // Create new city with slug as ID
+        const slug = generateSlug(formData.name);
+
+        // Check if city with this slug already exists
+        const existingCity = await getDoc(doc(db, 'cities', slug));
+        if (existingCity.exists()) {
+          alert(`Esiste già una città con il nome "${formData.name}". Per favore usa un nome diverso.`);
+          setLoading(false);
+          return;
+        }
+
         cityData.createdAt = serverTimestamp();
-        await addDoc(collection(db, 'cities'), cityData);
+        cityData.slug = slug; // Store slug in the document as well
+        await setDoc(doc(db, 'cities', slug), cityData);
+
+        alert(`Città creata con successo! URL: /citta/${slug}`);
       }
 
       onSave();
