@@ -9,7 +9,8 @@ import {
   where,
   getDocs,
   runTransaction,
-  serverTimestamp
+  serverTimestamp,
+  updateDoc
 } from 'firebase/firestore';
 import { FaClock, FaUsers, FaCalendar, FaArrowLeft } from 'react-icons/fa';
 import CryptoJS from 'crypto-js';
@@ -219,7 +220,25 @@ const BookingForm = () => {
           token: token,
           tokenExpiry: tokenExpiry.toISOString(),
           createdAt: serverTimestamp(),
-          status: 'confirmed'
+          status: 'confirmed',
+          reminders: {
+            confirmation: {
+              sent: false,
+              sentAt: null
+            },
+            threeDaysBefore: {
+              sent: false,
+              sentAt: null
+            },
+            oneDayBefore: {
+              sent: false,
+              sentAt: null
+            },
+            oneHourBefore: {
+              sent: false,
+              sentAt: null
+            }
+          }
         };
 
         // Atomic update: increment booked counter
@@ -234,6 +253,12 @@ const BookingForm = () => {
       // Send confirmation email
       try {
         await sendBookingConfirmation(bookingData, bookingData.token);
+
+        // Mark confirmation reminder as sent
+        await updateDoc(doc(db, 'bookings', bookingId), {
+          'reminders.confirmation.sent': true,
+          'reminders.confirmation.sentAt': new Date().toISOString()
+        });
       } catch (emailError) {
         logger.error('Error sending email:', emailError);
         // Don't fail the booking if email fails

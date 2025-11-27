@@ -38,7 +38,7 @@ export const cityDetails = {
         name: "Un viaggio nello spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       },
       {
         name: "Musica Immersiva",
@@ -96,7 +96,7 @@ export const cityDetails = {
       {
         name: "Galleria Spaziale",
         duration: 15,
-        image: "/images/cities/space.webp",
+        image: "/images/esperienza galleria spaziale.jpg",
         description:"Saturno, stelle"
       }
     ],
@@ -149,7 +149,7 @@ export const cityDetails = {
         name: "Viaggio nello Spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       }
     ],
     booking: {
@@ -207,7 +207,7 @@ export const cityDetails = {
         name: "Viaggio nello Spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       }
     ],
     booking: {
@@ -260,7 +260,7 @@ export const cityDetails = {
         name: "Viaggio nello Spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       }
     ],
     booking: {
@@ -305,7 +305,7 @@ export const cityDetails = {
       {
         name: "Galleria Spaziale",
         duration: 15,
-        image: "/images/cities/space.webp",
+        image: "/images/esperienza galleria spaziale.jpg",
         description:"Esperienza nella galleria spaziale"
       },
       {
@@ -318,7 +318,7 @@ export const cityDetails = {
         name: "Un viaggio nello spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       }
     ],
     booking: {
@@ -376,7 +376,7 @@ export const cityDetails = {
         name: "Viaggio nello Spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       }
     ],
     booking: {
@@ -428,7 +428,7 @@ export const cityDetails = {
       {
         name: "Galleria Spaziale",
         duration: 15,
-        image: "/images/cities/space.webp",
+        image: "/images/esperienza galleria spaziale.jpg",
         description:"Universo, pianeti, stelle"
       }
     ],
@@ -481,7 +481,7 @@ export const cityDetails = {
         name: "Viaggio nello Spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       }
     ],
     booking: {
@@ -532,7 +532,7 @@ export const cityDetails = {
         name: "Un viaggio nello spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       },
       {
         name: "Musica Immersiva",
@@ -582,7 +582,7 @@ export const cityDetails = {
       {
         name: "Galleria Spaziale",
         duration: 15,
-        image: "/images/cities/space.webp",
+        image: "/images/esperienza galleria spaziale.jpg",
         description:"Saturno, galassie, sole"
       },
       {
@@ -595,7 +595,7 @@ export const cityDetails = {
         name: "Viaggio nello Spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       }
     ],
     booking: {
@@ -648,7 +648,7 @@ export const cityDetails = {
         name: "Un viaggio nello spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       }
     ],
     booking: {
@@ -701,12 +701,12 @@ export const cityDetails = {
         name: "Un viaggio nello spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       },
       {
         name: "Galleria spaziale",
         duration: 15,
-        image: "/images/cities/space.webp",
+        image: "/images/esperienza galleria spaziale.jpg",
         description:"Saturno, galassie, Terra, sole"
       }
     ],
@@ -760,7 +760,7 @@ export const cityDetails = {
         name: "Un viaggio nello spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       }
     ],
     booking: {
@@ -805,7 +805,7 @@ export const cityDetails = {
       {
         name: "Galleria Spaziale",
         duration: 15,
-        image: "/images/cities/space.webp",
+        image: "/images/esperienza galleria spaziale.jpg",
         description:"Galleria spaziale"
       },
       {
@@ -818,7 +818,7 @@ export const cityDetails = {
         name: "Un viaggio nello spazio",
         duration: 15,
         description: "Universo, pianeti, stelle",
-        image: "/images/cities/space.webp"
+        image: "/images/esperienza galleria spaziale.jpg"
       }
     ],
     booking: {

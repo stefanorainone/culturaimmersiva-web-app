@@ -11,7 +11,7 @@ import {
   orderBy,
   updateDoc
 } from 'firebase/firestore';
-import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCity, FaCalendarCheck, FaCopy, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCity, FaCalendarCheck, FaCopy, FaExternalLinkAlt, FaBell } from 'react-icons/fa';
 import CityModal from '../../components/admin/CityModal';
 
 const Dashboard = () => {
@@ -317,6 +317,14 @@ const Dashboard = () => {
                 <FaCalendarCheck />
                 <span className="hidden sm:inline">Prenotazioni</span>
                 <span className="sm:hidden">Prenot.</span>
+              </button>
+              <button
+                onClick={() => navigate('/admin/reminders')}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors w-full sm:w-auto justify-center"
+              >
+                <FaBell />
+                <span className="hidden sm:inline">Reminder</span>
+                <span className="sm:hidden">Remind.</span>
               </button>
               <span className="text-xs sm:text-sm text-gray-600 hidden md:inline">
                 {currentUser?.email}

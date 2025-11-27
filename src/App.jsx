@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import WhatsAppButton from './components/WhatsAppButton';
 import Home from './pages/Home';
 import Cities from './pages/Cities';
 import CityDetail from './pages/CityDetail';
@@ -19,6 +20,8 @@ import Contact from './pages/Contact';
 import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminBookings from './pages/admin/Bookings';
+import AdminReminders from './pages/admin/Reminders';
+import AdminFixSlots from './pages/admin/FixSlots';
 import CityForm from './pages/admin/CityForm';
 
 function App() {
@@ -47,6 +50,7 @@ function App() {
                 </Routes>
               </main>
               <Footer />
+              <WhatsAppButton />
             </div>
           } />
 
@@ -63,6 +67,16 @@ function App() {
           <Route path="/admin/bookings" element={
             <ProtectedRoute>
               <AdminBookings />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/reminders" element={
+            <ProtectedRoute>
+              <AdminReminders />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/fix-slots" element={
+            <ProtectedRoute>
+              <AdminFixSlots />
             </ProtectedRoute>
           } />
           <Route path="/admin/cities/:id" element={

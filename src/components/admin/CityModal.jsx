@@ -33,12 +33,17 @@ const removeUndefined = (obj) => {
   if (typeof obj !== 'object') return obj;
   if (Array.isArray(obj)) return obj.map(removeUndefined);
 
+  // Don't process Firestore special values (like serverTimestamp)
+  if (obj.constructor && obj.constructor.name !== 'Object') return obj;
+
   const cleaned = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value === undefined) continue; // Skip undefined values
     if (value === null) {
       cleaned[key] = null;
-    } else if (typeof value === 'object') {
+    } else if (Array.isArray(value)) {
+      cleaned[key] = value.map(removeUndefined);
+    } else if (typeof value === 'object' && value.constructor && value.constructor.name === 'Object') {
       cleaned[key] = removeUndefined(value);
     } else {
       cleaned[key] = value;
@@ -300,6 +305,12 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
       console.log('[CityModal] handleSubmit - internalCityId:', internalCityId);
       console.log('[CityModal] handleSubmit - isUpdate:', !!internalCityId);
       console.log('[CityModal] handleSubmit - cityData (before clean):', cityData);
+      console.log('[CityModal] handleSubmit - Pricing Debug:', {
+        individual: cityData.eventData?.pricing?.individual,
+        group: cityData.eventData?.pricing?.group,
+        groupSize: cityData.eventData?.pricing?.groupSize,
+        currency: cityData.eventData?.pricing?.currency
+      });
       console.log('[CityModal] handleSubmit - selectedExperiences:', selectedExperiences);
 
       // Remove undefined values (Firestore doesn't accept them)
@@ -528,17 +539,18 @@ const CityModal = ({ isOpen, onClose, cityId, onSave }) => {
                     </label>
                     <input
                       type="number"
-                      value={formData.eventData.pricing.group || 20}
+                      value={formData.eventData.pricing.group || ''}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
                         eventData: {
                           ...prev.eventData,
-                          pricing: { ...prev.eventData.pricing, group: Number(e.target.value) }
+                          pricing: { ...prev.eventData.pricing, group: e.target.value ? Number(e.target.value) : 0 }
                         }
                       }))}
                       placeholder="20"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Se vuoto o 0, il prezzo di coppia non verrà mostrato sul sito</p>
                   </div>
                 </div>
 

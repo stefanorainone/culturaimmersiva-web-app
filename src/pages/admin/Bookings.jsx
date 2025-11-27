@@ -9,9 +9,11 @@ import {
   doc,
   query,
   orderBy,
-  updateDoc
+  updateDoc,
+  where,
+  increment
 } from 'firebase/firestore';
-import { FaEdit, FaTrash, FaSignOutAlt, FaCalendarCheck, FaFilter, FaUsers, FaFileCsv, FaDownload, FaSearch } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaSignOutAlt, FaCalendarCheck, FaFilter, FaUsers, FaFileCsv, FaDownload, FaSearch, FaBell } from 'react-icons/fa';
 import Papa from 'papaparse';
 
 const Bookings = () => {
@@ -32,6 +34,11 @@ const Bookings = () => {
     whatsapp: '',
     spots: 1
   });
+  const [selectedBookings, setSelectedBookings] = useState([]);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderType, setReminderType] = useState('threeDaysBefore');
+  const [customMessage, setCustomMessage] = useState('');
+  const [sendingReminders, setSendingReminders] = useState(false);
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -89,11 +96,42 @@ const Bookings = () => {
     }
 
     try {
+      // Find the booking to get slot information
+      const booking = bookings.find(b => b.id === bookingId);
+      if (!booking) {
+        alert('Prenotazione non trovata');
+        return;
+      }
+
+      // Find and update the timeslot to release the spots
+      if (booking.cityId && booking.date && booking.time) {
+        const slotsQuery = query(
+          collection(db, 'timeslots'),
+          where('cityId', '==', booking.cityId),
+          where('date', '==', booking.date),
+          where('time', '==', booking.time)
+        );
+
+        const slotsSnapshot = await getDocs(slotsQuery);
+
+        if (!slotsSnapshot.empty) {
+          const slotDoc = slotsSnapshot.docs[0];
+          // Release the spots: increment available, decrement booked
+          await updateDoc(doc(db, 'timeslots', slotDoc.id), {
+            availableSpots: increment(booking.spots || 1),
+            bookedSpots: increment(-(booking.spots || 1))
+          });
+          console.log(`✅ Released ${booking.spots || 1} spots for ${booking.cityName} - ${booking.date} ${booking.time}`);
+        }
+      }
+
+      // Delete the booking
       await deleteDoc(doc(db, 'bookings', bookingId));
       setBookings(bookings.filter(booking => booking.id !== bookingId));
+      alert('✅ Prenotazione eliminata e posti rilasciati con successo');
     } catch (error) {
       console.error('Error deleting booking:', error);
-      alert('Errore durante l\'eliminazione della prenotazione');
+      alert('Errore durante l\'eliminazione della prenotazione: ' + error.message);
     }
   };
 
@@ -109,17 +147,44 @@ const Bookings = () => {
 
   const handleSaveEdit = async () => {
     try {
+      const newSpots = Number(editForm.spots);
+      const oldSpots = editingBooking.spots || 1;
+      const spotsDifference = newSpots - oldSpots;
+
+      // If spots changed, update the timeslot
+      if (spotsDifference !== 0 && editingBooking.cityId && editingBooking.date && editingBooking.time) {
+        const slotsQuery = query(
+          collection(db, 'timeslots'),
+          where('cityId', '==', editingBooking.cityId),
+          where('date', '==', editingBooking.date),
+          where('time', '==', editingBooking.time)
+        );
+
+        const slotsSnapshot = await getDocs(slotsQuery);
+
+        if (!slotsSnapshot.empty) {
+          const slotDoc = slotsSnapshot.docs[0];
+          // If spots increased, decrease available and increase booked
+          // If spots decreased, increase available and decrease booked
+          await updateDoc(doc(db, 'timeslots', slotDoc.id), {
+            availableSpots: increment(-spotsDifference),
+            bookedSpots: increment(spotsDifference)
+          });
+          console.log(`✅ Updated slot: ${spotsDifference > 0 ? '+' : ''}${spotsDifference} spots for ${editingBooking.cityName} - ${editingBooking.date} ${editingBooking.time}`);
+        }
+      }
+
       await updateDoc(doc(db, 'bookings', editingBooking.id), {
         name: editForm.name,
         email: editForm.email,
         whatsapp: editForm.whatsapp,
-        spots: Number(editForm.spots)
+        spots: newSpots
       });
 
       // Update local state
       setBookings(bookings.map(b =>
         b.id === editingBooking.id
-          ? { ...b, ...editForm, spots: Number(editForm.spots) }
+          ? { ...b, ...editForm, spots: newSpots }
           : b
       ));
 
@@ -127,7 +192,60 @@ const Bookings = () => {
       alert('✅ Prenotazione aggiornata con successo');
     } catch (error) {
       console.error('Error updating booking:', error);
-      alert('Errore durante l\'aggiornamento della prenotazione');
+      alert('Errore durante l\'aggiornamento della prenotazione: ' + error.message);
+    }
+  };
+
+  const handleSelectBooking = (bookingId) => {
+    setSelectedBookings(prev =>
+      prev.includes(bookingId)
+        ? prev.filter(id => id !== bookingId)
+        : [...prev, bookingId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedBookings.length === filteredBookings.length) {
+      setSelectedBookings([]);
+    } else {
+      setSelectedBookings(filteredBookings.map(b => b.id));
+    }
+  };
+
+  const handleSendReminders = async () => {
+    if (selectedBookings.length === 0) {
+      alert('Seleziona almeno una prenotazione');
+      return;
+    }
+
+    if (reminderType === 'custom' && !customMessage.trim()) {
+      alert('Inserisci un messaggio personalizzato');
+      return;
+    }
+
+    setSendingReminders(true);
+
+    try {
+      // Import Cloud Function
+      const { getFunctions, httpsCallable } = await import('firebase/functions');
+      const functions = getFunctions();
+      const sendManualReminders = httpsCallable(functions, 'sendManualReminders');
+
+      const result = await sendManualReminders({
+        bookingIds: selectedBookings,
+        reminderType,
+        customMessage: reminderType === 'custom' ? customMessage : null
+      });
+
+      alert(`✅ Reminder inviati: ${result.data.sent} successi, ${result.data.failed} errori`);
+      setShowReminderModal(false);
+      setSelectedBookings([]);
+      setCustomMessage('');
+    } catch (error) {
+      console.error('Error sending reminders:', error);
+      alert('❌ Errore durante l\'invio dei reminder: ' + error.message);
+    } finally {
+      setSendingReminders(false);
     }
   };
 
@@ -530,6 +648,22 @@ const Bookings = () => {
           </div>
         </div>
 
+        {/* Send Reminders Button */}
+        {selectedBookings.length > 0 && (
+          <div className="mb-4 bg-primary text-white p-4 rounded-lg shadow flex justify-between items-center">
+            <span className="font-semibold">
+              {selectedBookings.length} prenotazion{selectedBookings.length === 1 ? 'e' : 'i'} selezionat{selectedBookings.length === 1 ? 'a' : 'e'}
+            </span>
+            <button
+              onClick={() => setShowReminderModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white text-primary rounded-lg hover:bg-gray-100 transition-colors font-semibold"
+            >
+              <FaBell />
+              Invia Reminder
+            </button>
+          </div>
+        )}
+
         {/* Bookings Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           {loading ? (
@@ -545,6 +679,14 @@ const Bookings = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-4 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedBookings.length === filteredBookings.length && filteredBookings.length > 0}
+                        onChange={handleSelectAll}
+                        className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                      />
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Cliente
                     </th>
@@ -560,6 +702,9 @@ const Bookings = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Prenotato il
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Reminders
+                    </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Azioni
                     </th>
@@ -568,6 +713,14 @@ const Bookings = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredBookings.map((booking) => (
                     <tr key={booking.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedBookings.includes(booking.id)}
+                          onChange={() => handleSelectBooking(booking.id)}
+                          className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">
                           {booking.name}
@@ -592,6 +745,26 @@ const Bookings = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatTimestamp(booking.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 text-xs">
+                        <div className="space-y-1">
+                          <div className={`flex items-center gap-1 ${booking.reminders?.confirmation?.sent ? 'text-green-600' : 'text-gray-400'}`}>
+                            <span>{booking.reminders?.confirmation?.sent ? '✅' : '⏳'}</span>
+                            <span>Conferma</span>
+                          </div>
+                          <div className={`flex items-center gap-1 ${booking.reminders?.threeDaysBefore?.sent ? 'text-green-600' : 'text-gray-400'}`}>
+                            <span>{booking.reminders?.threeDaysBefore?.sent ? '✅' : '⏳'}</span>
+                            <span>3 giorni</span>
+                          </div>
+                          <div className={`flex items-center gap-1 ${booking.reminders?.oneDayBefore?.sent ? 'text-green-600' : 'text-gray-400'}`}>
+                            <span>{booking.reminders?.oneDayBefore?.sent ? '✅' : '⏳'}</span>
+                            <span>1 giorno</span>
+                          </div>
+                          <div className={`flex items-center gap-1 ${booking.reminders?.oneHourBefore?.sent ? 'text-green-600' : 'text-gray-400'}`}>
+                            <span>{booking.reminders?.oneHourBefore?.sent ? '✅' : '⏳'}</span>
+                            <span>1 ora</span>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
@@ -687,6 +860,83 @@ const Bookings = () => {
                 className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-primary text-white rounded-lg hover:bg-primary-dark w-full sm:w-auto"
               >
                 Salva
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Reminders Modal */}
+      {showReminderModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <h3 className="text-xl font-bold text-primary">Invia Reminder</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Invia reminder a {selectedBookings.length} prenotazion{selectedBookings.length === 1 ? 'e' : 'i'}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo di Reminder
+                </label>
+                <select
+                  value={reminderType}
+                  onChange={(e) => setReminderType(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                >
+                  <option value="threeDaysBefore">⏰ Reminder 3 giorni prima</option>
+                  <option value="oneDayBefore">🔔 Reminder 1 giorno prima</option>
+                  <option value="oneHourBefore">🚨 Reminder 1 ora prima</option>
+                  <option value="custom">📝 Messaggio Personalizzato</option>
+                </select>
+              </div>
+
+              {reminderType === 'custom' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Messaggio Personalizzato
+                  </label>
+                  <textarea
+                    value={customMessage}
+                    onChange={(e) => setCustomMessage(e.target.value)}
+                    placeholder="Scrivi qui il tuo messaggio..."
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowReminderModal(false);
+                  setCustomMessage('');
+                }}
+                disabled={sendingReminders}
+                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleSendReminders}
+                disabled={sendingReminders}
+                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 flex items-center gap-2"
+              >
+                {sendingReminders ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    Invio in corso...
+                  </>
+                ) : (
+                  <>
+                    <FaBell />
+                    Invia Reminder
+                  </>
+                )}
               </button>
             </div>
           </div>

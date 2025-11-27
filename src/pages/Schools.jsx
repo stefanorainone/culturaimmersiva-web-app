@@ -26,6 +26,24 @@ const Schools = () => {
     },
   ];
 
+  const testimonials = [
+    {
+      text: 'I ragazzi sono rimasti affascinati! Abbiamo potuto visitare luoghi storici che sarebbe stato impossibile raggiungere con una gita tradizionale. Un modo innovativo di fare didattica.',
+      name: 'Prof.ssa Laura Bianchi',
+      school: 'Istituto Comprensivo G. Pascoli, Milano',
+    },
+    {
+      text: 'Esperienza didattica eccellente. Gli studenti hanno potuto immergersi nella storia romana come mai prima. La tecnologia VR ha reso la lezione indimenticabile e molto più coinvolgente.',
+      name: 'Prof. Andrea Ferretti',
+      school: 'Liceo Scientifico E. Fermi, Bologna',
+    },
+    {
+      text: 'Un progetto che ha entusiasmato sia i docenti che gli alunni. La realtà virtuale ha permesso di esplorare opere d\'arte e monumenti con un livello di dettaglio straordinario. Altamente consigliato!',
+      name: 'Prof.ssa Maria Conti',
+      school: 'Scuola Media Dante Alighieri, Firenze',
+    },
+  ];
+
   return (
     <div className="bg-white">
       {/* Hero */}
@@ -151,24 +169,24 @@ const Schools = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
+            {testimonials.map((testimonial, index) => (
               <motion.div
-                key={i}
+                key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
                 className="bg-white p-6 rounded-lg shadow-lg"
               >
                 <div className="text-secondary text-4xl mb-4">"</div>
                 <p className="text-gray-700 mb-4">
-                  Un'esperienza straordinaria che ha coinvolto tutti gli studenti. La VR ha reso la storia viva e tangibile.
+                  {testimonial.text}
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-primary rounded-full"></div>
                   <div>
-                    <p className="font-semibold text-primary">Prof. Mario Rossi</p>
-                    <p className="text-sm text-gray-600">Liceo Classico, Roma</p>
+                    <p className="font-semibold text-primary">{testimonial.name}</p>
+                    <p className="text-sm text-gray-600">{testimonial.school}</p>
                   </div>
                 </div>
               </motion.div>

@@ -530,3 +530,983 @@ exports.manualUpdateCityAvailability = functions
       );
     }
   });
+
+// ============================================================================
+// REMINDER SYSTEM
+// ============================================================================
+
+/**
+ * Replace variables in template strings with booking data
+ */
+function replaceTemplateVariables(template, booking) {
+  const safeName = sanitizeHtml(booking.name);
+  const safeCityName = sanitizeHtml(booking.cityName);
+  const safeLocationName = sanitizeHtml(booking.locationName || '');
+  const safeLocationAddress = sanitizeHtml(booking.locationAddress || '');
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('it-IT', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const formatTime = (dateString, timeString) => {
+    if (timeString) return timeString;
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  return template
+    .replace(/{cityName}/g, safeCityName)
+    .replace(/{customerName}/g, safeName)
+    .replace(/{eventDate}/g, formatDate(booking.date))
+    .replace(/{eventTime}/g, booking.time || formatTime(booking.date, booking.time))
+    .replace(/{locationName}/g, safeLocationName)
+    .replace(/{locationAddress}/g, safeLocationAddress)
+    .replace(/{spots}/g, booking.spots || '');
+}
+
+/**
+ * Generate email template for reminders with settings support
+ */
+function generateReminderEmail(booking, reminderType, templateSettings = null) {
+  const baseUrl = 'https://culturaimmersiva-it.web.app';
+  const editUrl = `${baseUrl}/booking-manage/${booking.token}`;
+
+  const safeName = sanitizeHtml(booking.name);
+  const safeCityName = sanitizeHtml(booking.cityName);
+  const safeLocationName = sanitizeHtml(booking.locationName || '');
+  const safeLocationAddress = sanitizeHtml(booking.locationAddress || '');
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('it-IT', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const formatTime = (dateString, timeString) => {
+    if (timeString) return timeString;
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  let subject, title, message, emoji;
+
+  // Use custom template if provided, otherwise use defaults
+  if (templateSettings) {
+    subject = replaceTemplateVariables(templateSettings.subject, booking);
+    title = replaceTemplateVariables(templateSettings.title, booking);
+    message = replaceTemplateVariables(templateSettings.message, booking);
+    emoji = templateSettings.emoji || '⏰';
+  } else {
+    // Default templates (fallback)
+    switch (reminderType) {
+      case 'threeDaysBefore':
+        emoji = '⏰';
+        subject = `Reminder: ${safeCityName} tra 3 giorni`;
+        title = 'Promemoria - 3 giorni all\'evento';
+        message = `Ti ricordiamo che la tua esperienza immersiva a <strong>${safeCityName}</strong> si terrà tra 3 giorni!`;
+        break;
+      case 'oneDayBefore':
+        emoji = '🔔';
+        subject = `Reminder: ${safeCityName} domani`;
+        title = 'Promemoria - Evento domani!';
+        message = `Ti ricordiamo che domani avrai la tua esperienza immersiva a <strong>${safeCityName}</strong>. Ci vediamo presto!`;
+        break;
+      case 'oneHourBefore':
+        emoji = '🚨';
+        subject = `Ultimo Reminder: ${safeCityName} tra 1 ora`;
+        title = 'Promemoria - Evento tra 1 ora!';
+        message = `La tua esperienza immersiva a <strong>${safeCityName}</strong> inizierà tra circa 1 ora. Ti aspettiamo!`;
+        break;
+      default:
+        return null;
+    }
+  }
+
+  const emailHtml = `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+    .content {
+      padding: 30px 20px;
+    }
+    .booking-details {
+      background-color: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+    .detail-row {
+      margin: 10px 0;
+      padding: 8px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .detail-label {
+      color: #6c757d;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .detail-value {
+      color: #212529;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .button-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .button {
+      display: inline-block;
+      padding: 12px 30px;
+      margin: 10px 5px;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: bold;
+      font-size: 14px;
+      background-color: #667eea;
+      color: white;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 20px;
+      text-align: center;
+      color: #6c757d;
+      font-size: 12px;
+    }
+    @media only screen and (max-width: 600px) {
+      .button {
+        display: block;
+        margin: 10px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${emoji} ${title}</h1>
+    </div>
+
+    <div class="content">
+      <p style="font-size: 16px; color: #212529;">
+        Ciao <strong>${safeName}</strong>,
+      </p>
+
+      <p style="font-size: 16px; color: #212529;">
+        ${message}
+      </p>
+
+      <div class="booking-details">
+        <h2 style="margin-top: 0; color: #667eea; font-size: 20px;">📋 Dettagli Prenotazione</h2>
+
+        <div class="detail-row">
+          <div class="detail-label">🏛️ Evento</div>
+          <div class="detail-value">${safeCityName}</div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">📅 Data</div>
+          <div class="detail-value">${formatDate(booking.date)}</div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">🕐 Orario</div>
+          <div class="detail-value">${booking.time || formatTime(booking.date, booking.time)}</div>
+        </div>
+
+        ${safeLocationName ? `
+        <div class="detail-row">
+          <div class="detail-label">📍 Luogo</div>
+          <div class="detail-value">${safeLocationName}${safeLocationAddress ? `<br><span style="font-size: 14px; font-weight: 400; color: #6c757d;">${safeLocationAddress}</span>` : ''}</div>
+        </div>
+        ` : ''}
+
+        <div class="detail-row">
+          <div class="detail-label">👥 Posti Prenotati</div>
+          <div class="detail-value">${booking.spots}</div>
+        </div>
+      </div>
+
+      <div class="button-container">
+        <a href="${editUrl}" class="button">
+          Gestisci Prenotazione
+        </a>
+      </div>
+
+      <p style="font-size: 14px; color: #6c757d; text-align: center;">
+        Non vediamo l'ora di vederti! 🎉
+      </p>
+    </div>
+
+    <div class="footer">
+      <p>Cultura Immersiva<br>
+      Esperienze in Realtà Virtuale nelle Città Italiane</p>
+      <p>Hai bisogno di aiuto? <a href="https://wa.me/393792121188" style="color: #667eea; text-decoration: none;">Contattaci su WhatsApp</a></p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  const emailText = `
+${title}
+
+Ciao ${safeName},
+
+${message.replace(/<\/?strong>/g, '')}
+
+Dettagli Prenotazione:
+- Evento: ${safeCityName}
+- Data: ${formatDate(booking.date)}
+- Orario: ${booking.time || formatTime(booking.date, booking.time)}
+${safeLocationName ? `- Luogo: ${safeLocationName}${safeLocationAddress ? ` - ${safeLocationAddress}` : ''}` : ''}
+- Posti Prenotati: ${booking.spots}
+
+Gestisci la tua prenotazione: ${editUrl}
+
+Non vediamo l'ora di vederti!
+
+---
+Cultura Immersiva
+Esperienze in Realtà Virtuale nelle Città Italiane
+  `;
+
+  return {
+    subject,
+    html: emailHtml,
+    text: emailText
+  };
+}
+
+/**
+ * Scheduled Function: Send Automatic Reminders
+ * Runs every hour to check and send reminders
+ */
+exports.sendAutomaticReminders = functions
+  .region('europe-west1')
+  .pubsub
+  .schedule('every 1 hours')
+  .timeZone('Europe/Rome')
+  .onRun(async (context) => {
+    console.log('⏰ Starting automatic reminders check...');
+
+    if (!SENDGRID_KEY) {
+      console.error('❌ SendGrid API key not configured');
+      return null;
+    }
+
+    sgMail.setApiKey(SENDGRID_KEY);
+
+    try {
+      const db = admin.firestore();
+      const now = new Date();
+
+      // Load reminder settings from Firestore
+      const settingsDoc = await db.collection('settings').doc('reminders').get();
+      let settings;
+
+      if (settingsDoc.exists()) {
+        settings = settingsDoc.data();
+        console.log('✅ Loaded reminder settings from Firestore');
+      } else {
+        // Default settings as fallback
+        settings = {
+          enabled: true,
+          timing: {
+            threeDaysBefore: { enabled: true, hoursBeforeEvent: 72 },
+            oneDayBefore: { enabled: true, hoursBeforeEvent: 24 },
+            oneHourBefore: { enabled: true, hoursBeforeEvent: 1 }
+          },
+          templates: {}
+        };
+        console.log('⚠️  No settings found, using defaults');
+      }
+
+      // Check if reminder system is globally enabled
+      if (!settings.enabled) {
+        console.log('⏸️  Reminder system is disabled in settings');
+        return { message: 'Reminders disabled' };
+      }
+
+      // Get all confirmed bookings that haven't been cancelled
+      const bookingsSnapshot = await db.collection('bookings')
+        .where('status', '==', 'confirmed')
+        .get();
+
+      let sentCount = 0;
+      const results = {
+        threeDaysBefore: 0,
+        oneDayBefore: 0,
+        oneHourBefore: 0,
+        errors: 0
+      };
+
+      for (const bookingDoc of bookingsSnapshot.docs) {
+        const booking = bookingDoc.data();
+        const bookingId = bookingDoc.id;
+
+        if (!booking.date || !booking.email) {
+          console.log(`⚠️  Skipping booking ${bookingId}: missing date or email`);
+          continue;
+        }
+
+        const eventDate = new Date(booking.date);
+
+        // Parse time if provided
+        if (booking.time) {
+          const [hours, minutes] = booking.time.split(':');
+          eventDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+
+        const hoursUntilEvent = (eventDate - now) / (1000 * 60 * 60);
+
+        // Check each reminder type
+        const reminders = booking.reminders || {};
+
+        // 3 days before reminder
+        const threeDayConfig = settings.timing.threeDaysBefore;
+        if (threeDayConfig.enabled &&
+            hoursUntilEvent <= threeDayConfig.hoursBeforeEvent &&
+            hoursUntilEvent > (threeDayConfig.hoursBeforeEvent - 3) &&
+            !reminders.threeDaysBefore?.sent) {
+          try {
+            const template = settings.templates?.threeDaysBefore || null;
+            const emailTemplate = generateReminderEmail(booking, 'threeDaysBefore', template);
+            await sgMail.send({
+              to: booking.email,
+              from: 'noreply@culturaimmersiva.it',
+              subject: emailTemplate.subject,
+              text: emailTemplate.text,
+              html: emailTemplate.html
+            });
+
+            await db.collection('bookings').doc(bookingId).update({
+              'reminders.threeDaysBefore.sent': true,
+              'reminders.threeDaysBefore.sentAt': admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            console.log(`✅ Sent 3-day reminder for booking ${bookingId}`);
+            results.threeDaysBefore++;
+            sentCount++;
+          } catch (error) {
+            console.error(`❌ Error sending 3-day reminder for ${bookingId}:`, error);
+            results.errors++;
+          }
+        }
+
+        // 1 day before reminder
+        const oneDayConfig = settings.timing.oneDayBefore;
+        if (oneDayConfig.enabled &&
+            hoursUntilEvent <= oneDayConfig.hoursBeforeEvent &&
+            hoursUntilEvent > (oneDayConfig.hoursBeforeEvent - 3) &&
+            !reminders.oneDayBefore?.sent) {
+          try {
+            const template = settings.templates?.oneDayBefore || null;
+            const emailTemplate = generateReminderEmail(booking, 'oneDayBefore', template);
+            await sgMail.send({
+              to: booking.email,
+              from: 'noreply@culturaimmersiva.it',
+              subject: emailTemplate.subject,
+              text: emailTemplate.text,
+              html: emailTemplate.html
+            });
+
+            await db.collection('bookings').doc(bookingId).update({
+              'reminders.oneDayBefore.sent': true,
+              'reminders.oneDayBefore.sentAt': admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            console.log(`✅ Sent 1-day reminder for booking ${bookingId}`);
+            results.oneDayBefore++;
+            sentCount++;
+          } catch (error) {
+            console.error(`❌ Error sending 1-day reminder for ${bookingId}:`, error);
+            results.errors++;
+          }
+        }
+
+        // 1 hour before reminder
+        const oneHourConfig = settings.timing.oneHourBefore;
+        if (oneHourConfig.enabled &&
+            hoursUntilEvent <= oneHourConfig.hoursBeforeEvent &&
+            hoursUntilEvent > (oneHourConfig.hoursBeforeEvent - 0.5) &&
+            !reminders.oneHourBefore?.sent) {
+          try {
+            const template = settings.templates?.oneHourBefore || null;
+            const emailTemplate = generateReminderEmail(booking, 'oneHourBefore', template);
+            await sgMail.send({
+              to: booking.email,
+              from: 'noreply@culturaimmersiva.it',
+              subject: emailTemplate.subject,
+              text: emailTemplate.text,
+              html: emailTemplate.html
+            });
+
+            await db.collection('bookings').doc(bookingId).update({
+              'reminders.oneHourBefore.sent': true,
+              'reminders.oneHourBefore.sentAt': admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            console.log(`✅ Sent 1-hour reminder for booking ${bookingId}`);
+            results.oneHourBefore++;
+            sentCount++;
+          } catch (error) {
+            console.error(`❌ Error sending 1-hour reminder for ${bookingId}:`, error);
+            results.errors++;
+          }
+        }
+      }
+
+      console.log(`✅ Reminder check complete. Sent ${sentCount} reminders`, results);
+      return results;
+
+    } catch (error) {
+      console.error('❌ Error in sendAutomaticReminders:', error);
+      return null;
+    }
+  });
+
+/**
+ * Callable Function: Send Manual Reminders to Group
+ * Allows admin to send reminders to multiple bookings
+ */
+exports.sendManualReminders = functions
+  .region('europe-west1')
+  .https
+  .onCall(async (data, context) => {
+    try {
+      // Require authentication
+      if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated');
+      }
+
+      const { bookingIds, reminderType, customMessage } = data;
+
+      if (!bookingIds || !Array.isArray(bookingIds) || bookingIds.length === 0) {
+        throw new functions.https.HttpsError('invalid-argument', 'bookingIds array is required');
+      }
+
+      if (!['threeDaysBefore', 'oneDayBefore', 'oneHourBefore', 'custom'].includes(reminderType)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid reminder type');
+      }
+
+      if (!SENDGRID_KEY) {
+        throw new functions.https.HttpsError('failed-precondition', 'SendGrid API key not configured');
+      }
+
+      sgMail.setApiKey(SENDGRID_KEY);
+      const db = admin.firestore();
+
+      // Load reminder settings from Firestore
+      const settingsDoc = await db.collection('settings').doc('reminders').get();
+      let settings = null;
+      if (settingsDoc.exists()) {
+        settings = settingsDoc.data();
+        console.log('✅ Loaded reminder settings for manual send');
+      }
+
+      const results = {
+        sent: 0,
+        failed: 0,
+        errors: []
+      };
+
+      for (const bookingId of bookingIds) {
+        try {
+          const bookingDoc = await db.collection('bookings').doc(bookingId).get();
+
+          if (!bookingDoc.exists) {
+            console.log(`⚠️  Booking ${bookingId} not found`);
+            results.failed++;
+            results.errors.push({ bookingId, error: 'Booking not found' });
+            continue;
+          }
+
+          const booking = bookingDoc.data();
+
+          if (!booking.email) {
+            console.log(`⚠️  Booking ${bookingId} has no email`);
+            results.failed++;
+            results.errors.push({ bookingId, error: 'No email address' });
+            continue;
+          }
+
+          let emailTemplate;
+          if (reminderType === 'custom' && customMessage) {
+            // Custom message reminder
+            emailTemplate = {
+              subject: `Promemoria: ${booking.cityName}`,
+              html: generateCustomReminderEmail(booking, customMessage),
+              text: customMessage
+            };
+          } else {
+            // Use settings template if available
+            const template = settings?.templates?.[reminderType] || null;
+            emailTemplate = generateReminderEmail(booking, reminderType, template);
+          }
+
+          await sgMail.send({
+            to: booking.email,
+            from: 'noreply@culturaimmersiva.it',
+            subject: emailTemplate.subject,
+            text: emailTemplate.text,
+            html: emailTemplate.html
+          });
+
+          console.log(`✅ Sent manual reminder to ${booking.email} for booking ${bookingId}`);
+          results.sent++;
+
+        } catch (error) {
+          console.error(`❌ Error sending reminder to ${bookingId}:`, error);
+          results.failed++;
+          results.errors.push({ bookingId, error: error.message });
+        }
+      }
+
+      console.log(`📊 Manual reminders complete: ${results.sent} sent, ${results.failed} failed`);
+      return results;
+
+    } catch (error) {
+      console.error('❌ Error in sendManualReminders:', error);
+      throw new functions.https.HttpsError('internal', 'Failed to send manual reminders', error.message);
+    }
+  });
+
+// Helper function for custom reminder email
+function generateCustomReminderEmail(booking, customMessage) {
+  const safeName = sanitizeHtml(booking.name);
+  const safeCityName = sanitizeHtml(booking.cityName);
+  const safeMessage = sanitizeHtml(customMessage);
+
+  return `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Promemoria</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .content {
+      padding: 30px 20px;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 20px;
+      text-align: center;
+      color: #6c757d;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📢 Promemoria</h1>
+    </div>
+    <div class="content">
+      <p>Ciao <strong>${safeName}</strong>,</p>
+      <p>${safeMessage.replace(/\n/g, '<br>')}</p>
+      <p style="margin-top: 20px;"><strong>Evento:</strong> ${safeCityName}</p>
+    </div>
+    <div class="footer">
+      <p>Cultura Immersiva<br>
+      Esperienze in Realtà Virtuale nelle Città Italiane</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Cloud Function to fix slot consistency
+ * Only accessible by admin users
+ * Does everything server-side: reads, analyzes, and updates
+ */
+exports.fixSlotsConsistency = functions.https.onCall(async (data, context) => {
+  try {
+    // Verify user is authenticated
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    }
+
+    console.log('🔧 Starting slot consistency fix...');
+
+    const db = admin.firestore();
+
+    // 1. Load all slots
+    const slotsSnapshot = await db.collection('timeslots').get();
+    const slots = slotsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    console.log(`📊 Found ${slots.length} total slots`);
+
+    // 2. Load all bookings
+    const bookingsSnapshot = await db.collection('bookings').get();
+    const bookings = bookingsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    console.log(`📋 Found ${bookings.length} total bookings`);
+
+    // 3. Group bookings by slot
+    const bookingsBySlot = {};
+    bookings.forEach(booking => {
+      const key = `${booking.cityId}_${booking.date}_${booking.time}`;
+      if (!bookingsBySlot[key]) {
+        bookingsBySlot[key] = [];
+      }
+      bookingsBySlot[key].push(booking);
+    });
+
+    console.log('🔄 Analyzing slots...');
+
+    let corrected = 0;
+    let alreadyCorrect = 0;
+    const inconsistencies = [];
+
+    // 4. Find and fix inconsistencies
+    for (const slot of slots) {
+      const key = `${slot.cityId}_${slot.date}_${slot.time}`;
+      const slotBookings = bookingsBySlot[key] || [];
+
+      // Calculate actual booked spots
+      const actualBookedSpots = slotBookings.reduce((sum, b) => sum + (b.spots || 1), 0);
+      const currentBookedSpots = slot.bookedSpots || 0;
+      const totalSpots = slot.totalSpots || 10;
+
+      // Calculate correct available spots
+      const correctAvailableSpots = totalSpots - actualBookedSpots;
+      const currentAvailableSpots = slot.availableSpots || totalSpots;
+
+      if (actualBookedSpots !== currentBookedSpots || correctAvailableSpots !== currentAvailableSpots) {
+        // Inconsistency found - fix it
+        const updateData = {
+          bookedSpots: actualBookedSpots,
+          availableSpots: correctAvailableSpots
+        };
+
+        try {
+          await db.collection('timeslots').doc(slot.id).update(updateData);
+
+          inconsistencies.push({
+            cityName: slot.cityName || slot.cityId,
+            date: slot.date,
+            time: slot.time,
+            oldBooked: currentBookedSpots,
+            newBooked: actualBookedSpots,
+            oldAvailable: currentAvailableSpots,
+            newAvailable: correctAvailableSpots,
+            bookingsCount: slotBookings.length,
+            bookings: slotBookings.map(b => `${b.name}: ${b.spots} posti`).join(', ')
+          });
+
+          corrected++;
+          console.log(`✅ Fixed ${slot.cityName} ${slot.date} ${slot.time}: booked ${currentBookedSpots}→${actualBookedSpots}, available ${currentAvailableSpots}→${correctAvailableSpots}`);
+        } catch (error) {
+          console.error(`❌ Failed to update slot ${slot.id}:`, error);
+        }
+      } else {
+        alreadyCorrect++;
+      }
+    }
+
+    console.log(`\n📈 Slot fix completed: ${alreadyCorrect} already correct, ${corrected} fixed`);
+
+    return {
+      success: true,
+      total: slots.length,
+      alreadyCorrect,
+      corrected,
+      inconsistencies
+    };
+
+  } catch (error) {
+    console.error('❌ Error in fixSlotsConsistency:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
+
+/**
+ * Cloud Function to debug Ancona slot
+ */
+exports.debugAnconaSlot = functions.https.onCall(async (data, context) => {
+  try {
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    }
+
+    console.log('🔍 Debug Ancona slot - checking all variations...');
+
+    const db = admin.firestore();
+
+    // Try different variations of cityId
+    const cityVariations = ['ancona', 'Ancona', 'ANCONA'];
+    let allSlots = [];
+    let allBookings = [];
+    let foundCityId = null;
+
+    for (const cityId of cityVariations) {
+      const slotsSnapshot = await db.collection('timeslots')
+        .where('cityId', '==', cityId)
+        .get();
+
+      if (!slotsSnapshot.empty) {
+        console.log(`✅ Found ${slotsSnapshot.size} slots for cityId="${cityId}"`);
+        foundCityId = cityId;
+        allSlots = slotsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        // Also get bookings with this cityId
+        const bookingsSnapshot = await db.collection('bookings')
+          .where('cityId', '==', cityId)
+          .get();
+
+        allBookings = bookingsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        break; // Found it, no need to try other variations
+      } else {
+        console.log(`❌ No slots found for cityId="${cityId}"`);
+      }
+    }
+
+    if (allSlots.length === 0) {
+      return {
+        success: false,
+        error: 'No Ancona slots found with any variation',
+        triedVariations: cityVariations
+      };
+    }
+
+    // Group bookings by slot
+    const bookingsBySlot = {};
+    allBookings.forEach(booking => {
+      const key = `${booking.date}_${booking.time}`;
+      if (!bookingsBySlot[key]) {
+        bookingsBySlot[key] = [];
+      }
+      bookingsBySlot[key].push({
+        id: booking.id,
+        name: booking.name,
+        email: booking.email,
+        spots: booking.spots,
+        createdAt: booking.createdAt
+      });
+    });
+
+    // Analyze each slot
+    const analysis = allSlots.map(slot => {
+      const key = `${slot.date}_${slot.time}`;
+      const slotBookings = bookingsBySlot[key] || [];
+      const actualBookedSpots = slotBookings.reduce((sum, b) => sum + (b.spots || 0), 0);
+
+      return {
+        slotId: slot.id,
+        cityId: slot.cityId, // Include actual cityId format
+        date: slot.date,
+        time: slot.time,
+        totalSpots: slot.totalSpots,
+        bookedSpots: slot.bookedSpots,
+        availableSpots: slot.availableSpots,
+        actualBookedSpots,
+        expectedAvailableSpots: slot.totalSpots - actualBookedSpots,
+        bookingsCount: slotBookings.length,
+        bookings: slotBookings,
+        isConsistent: slot.bookedSpots === actualBookedSpots && slot.availableSpots === (slot.totalSpots - actualBookedSpots)
+      };
+    });
+
+    return {
+      success: true,
+      foundCityId: foundCityId,
+      totalSlots: allSlots.length,
+      totalBookings: allBookings.length,
+      slots: analysis
+    };
+
+  } catch (error) {
+    console.error('❌ Error in debugAnconaSlot:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
+
+/**
+ * Cloud Function to manually fix Ancona 10:30 slot
+ */
+exports.fixAnconaSlot = functions.https.onCall(async (data, context) => {
+  try {
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    }
+
+    console.log('🔧 Fixing Ancona 10:30 slot - trying all variations...');
+
+    const db = admin.firestore();
+
+    // Try different variations
+    const cityVariations = ['ancona', 'Ancona', 'ANCONA'];
+    const timeVariations = ['10:30', '10.30'];
+
+    let slotDoc = null;
+    let slotData = null;
+    let foundCityId = null;
+    let foundTime = null;
+
+    // Try all combinations
+    for (const cityId of cityVariations) {
+      for (const time of timeVariations) {
+        const slotsSnapshot = await db.collection('timeslots')
+          .where('cityId', '==', cityId)
+          .where('time', '==', time)
+          .get();
+
+        if (!slotsSnapshot.empty) {
+          console.log(`✅ Found slot with cityId="${cityId}" and time="${time}"`);
+          slotDoc = slotsSnapshot.docs[0];
+          slotData = slotDoc.data();
+          foundCityId = cityId;
+          foundTime = time;
+          break;
+        }
+      }
+      if (slotDoc) break;
+    }
+
+    if (!slotDoc) {
+      // Try to find ANY Ancona slot with 10:30 to provide better error message
+      const allAncona = await db.collection('timeslots')
+        .where('cityId', 'in', cityVariations)
+        .get();
+
+      const times = allAncona.docs.map(doc => doc.data().time);
+
+      throw new functions.https.HttpsError(
+        'not-found',
+        `Slot Ancona 10:30 not found. Found ${allAncona.size} Ancona slots with times: ${[...new Set(times)].join(', ')}`
+      );
+    }
+
+    // Find actual bookings for this slot
+    const bookingsSnapshot = await db.collection('bookings')
+      .where('cityId', '==', foundCityId)
+      .where('time', '==', foundTime)
+      .where('date', '==', slotData.date)
+      .get();
+
+    const actualBookedSpots = bookingsSnapshot.docs.reduce((sum, doc) => {
+      return sum + (doc.data().spots || 0);
+    }, 0);
+
+    const totalSpots = slotData.totalSpots || 10;
+    const correctAvailableSpots = totalSpots - actualBookedSpots;
+
+    console.log(`Current slot data:`);
+    console.log(`  CityId: ${foundCityId}`);
+    console.log(`  Time: ${foundTime}`);
+    console.log(`  Date: ${slotData.date}`);
+    console.log(`  Total: ${totalSpots}`);
+    console.log(`  Booked (DB): ${slotData.bookedSpots}`);
+    console.log(`  Available (DB): ${slotData.availableSpots}`);
+    console.log(`  Actual bookings: ${bookingsSnapshot.size} (${actualBookedSpots} spots)`);
+    console.log(`  Correcting to: ${actualBookedSpots} booked, ${correctAvailableSpots} available`);
+
+    // Update the slot
+    await db.collection('timeslots').doc(slotDoc.id).update({
+      bookedSpots: actualBookedSpots,
+      availableSpots: correctAvailableSpots
+    });
+
+    console.log('✅ Slot updated successfully');
+
+    return {
+      success: true,
+      slotId: slotDoc.id,
+      cityId: foundCityId,
+      date: slotData.date,
+      time: foundTime,
+      oldBooked: slotData.bookedSpots,
+      newBooked: actualBookedSpots,
+      oldAvailable: slotData.availableSpots,
+      newAvailable: correctAvailableSpots,
+      bookingsCount: bookingsSnapshot.size,
+      totalSpots
+    };
+
+  } catch (error) {
+    console.error('❌ Error in fixAnconaSlot:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
