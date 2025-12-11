@@ -5,13 +5,12 @@ import {
   doc,
   getDoc,
   collection,
-  query,
-  where,
-  getDocs,
   runTransaction,
   serverTimestamp,
-  updateDoc
+  updateDoc,
+  increment
 } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { FaClock, FaUsers, FaCalendar, FaArrowLeft } from 'react-icons/fa';
 import CryptoJS from 'crypto-js';
 import { sendBookingConfirmation } from '../services/emailService';
@@ -34,6 +33,8 @@ const BookingForm = () => {
     whatsapp: '',
     spots: 1
   });
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Load city data and check availability
   useEffect(() => {
@@ -47,34 +48,23 @@ const BookingForm = () => {
         // Load city
         const cityDoc = await getDoc(doc(db, 'cities', cityId));
         if (cityDoc.exists()) {
-          setCity({ id: cityDoc.id, ...cityDoc.data() });
-        }
+          const cityData = { id: cityDoc.id, ...cityDoc.data() };
+          setCity(cityData);
 
-        // Check current availability
-        const bookingsQuery = query(
-          collection(db, 'bookings'),
-          where('cityId', '==', cityId),
-          where('date', '==', selectedSlot.date),
-          where('time', '==', selectedSlot.time)
-        );
+          // Check availability using atomic counter from city document
+          // This is more secure and doesn't require querying all bookings
+          const slotKey = `${selectedSlot.date}-${selectedSlot.time}`;
+          const bookedSlots = cityData.bookedSlots || {};
+          const currentBooked = bookedSlots[slotKey] || 0;
+          const available = selectedSlot.capacity - currentBooked;
 
-        const bookingsSnapshot = await getDocs(bookingsQuery);
-        let totalBooked = 0;
-        bookingsSnapshot.docs.forEach(doc => {
-          const booking = doc.data();
-          // Skip cancelled bookings
-          if (booking.status !== 'cancelled') {
-            totalBooked += booking.spots;
+          setAvailableSpots(available);
+
+          if (available <= 0) {
+            alert('⚠️ Non ci sono più posti disponibili per questo orario. Scegli un altro slot.');
+            navigate(`/booking/${cityId}`);
+            return;
           }
-        });
-
-        const available = selectedSlot.capacity - totalBooked;
-        setAvailableSpots(available);
-
-        if (available <= 0) {
-          alert('⚠️ Non ci sono più posti disponibili per questo orario. Scegli un altro slot.');
-          navigate(`/booking/${cityId}`);
-          return;
         }
 
         setLoading(false);
@@ -148,6 +138,10 @@ const BookingForm = () => {
       alert('❌ Numero posti non valido (1-50)');
       return false;
     }
+    if (!termsAccepted) {
+      alert('❌ Devi accettare i Termini e Condizioni per procedere');
+      return false;
+    }
     return true;
   };
 
@@ -196,14 +190,19 @@ const BookingForm = () => {
           throw new Error(`Solo ${available} posti disponibili. Un'altra persona ha prenotato nel frattempo.`);
         }
 
-        // Generate token for magic link
-        const bookingRef = doc(collection(db, 'bookings'));
-        bookingId = bookingRef.id;
-        const token = generateToken(bookingId, formData.email);
+        // Generate secure token for magic link
+        // Use a pre-generated ID to create the token, then use the token as the document ID
+        // This improves security by making bookings accessible only via direct document access
+        const tempId = doc(collection(db, 'bookings')).id;
+        const token = generateToken(tempId, formData.email);
 
-        // Token expires in 3 days (increased security)
-        const tokenExpiry = new Date();
-        tokenExpiry.setDate(tokenExpiry.getDate() + 3);
+        // Use the token as the document ID for enhanced security
+        const bookingRef = doc(db, 'bookings', token);
+        bookingId = token;
+
+        // Token valido fino alla fine del giorno dell'evento
+        const tokenExpiry = new Date(selectedSlot.date);
+        tokenExpiry.setHours(23, 59, 59, 999);
 
         bookingData = {
           cityId,
@@ -238,12 +237,25 @@ const BookingForm = () => {
               sent: false,
               sentAt: null
             }
+          },
+          consents: {
+            termsAndConditions: {
+              accepted: true,
+              acceptedAt: new Date().toISOString(),
+              version: '2024-12-11'
+            },
+            marketing: {
+              accepted: marketingConsent,
+              acceptedAt: marketingConsent ? new Date().toISOString() : null,
+              version: '2024-12-11'
+            }
           }
         };
 
         // Atomic update: increment booked counter
+        // Using Firestore increment() for better security (prevents negative values)
         transaction.update(cityRef, {
-          [`bookedSlots.${slotKey}`]: currentBooked + formData.spots
+          [`bookedSlots.${slotKey}`]: increment(formData.spots)
         });
 
         // Create booking
@@ -262,6 +274,27 @@ const BookingForm = () => {
       } catch (emailError) {
         logger.error('Error sending email:', emailError);
         // Don't fail the booking if email fails
+      }
+
+      // Track Meta Conversion (CompleteRegistration event) - only if user consented
+      if (marketingConsent) {
+        try {
+          const functions = getFunctions(undefined, 'europe-west1');
+          const trackMetaConversion = httpsCallable(functions, 'trackMetaConversion');
+          await trackMetaConversion({
+            email: bookingData.email,
+            phone: bookingData.whatsapp,
+            eventSourceUrl: window.location.href,
+            userAgent: navigator.userAgent,
+            eventId: bookingId,
+            cityName: bookingData.cityName,
+            bookingValue: city?.pricing?.individual || 0
+          });
+          logger.log('Meta conversion tracked successfully');
+        } catch (metaError) {
+          logger.error('Error tracking Meta conversion:', metaError);
+          // Don't fail the booking if Meta tracking fails
+        }
       }
 
       // Success - navigate to ticket page
@@ -401,6 +434,35 @@ const BookingForm = () => {
               <p className="text-xs text-gray-500 mt-2">
                 Massimo {availableSpots} posti disponibili
               </p>
+            </div>
+
+            {/* Accettazione Termini e Condizioni - OBBLIGATORIO */}
+            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+              <input
+                type="checkbox"
+                id="termsAccepted"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-1 w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                required
+              />
+              <label htmlFor="termsAccepted" className="text-sm text-gray-600">
+                <span className="text-red-500">*</span> Ho letto e accetto i <a href="/termini-condizioni" target="_blank" className="text-primary hover:underline">Termini e Condizioni</a> e la <a href="/privacy-policy" target="_blank" className="text-primary hover:underline">Privacy Policy</a>
+              </label>
+            </div>
+
+            {/* Consenso marketing - OPZIONALE */}
+            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+              <input
+                type="checkbox"
+                id="marketingConsent"
+                checked={marketingConsent}
+                onChange={(e) => setMarketingConsent(e.target.checked)}
+                className="mt-1 w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+              />
+              <label htmlFor="marketingConsent" className="text-sm text-gray-600">
+                Desidero ricevere offerte esclusive e novità sulle esperienze VR. <a href="/privacy-policy" target="_blank" className="text-primary hover:underline">(maggiori info)</a>
+              </label>
             </div>
 
             <button

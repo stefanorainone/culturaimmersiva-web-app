@@ -22,6 +22,7 @@ const Dashboard = () => {
   const [selectedDates, setSelectedDates] = useState([]); // Array of selected dates
   const [dateSearchTerm, setDateSearchTerm] = useState('');
   const [showDateSuggestions, setShowDateSuggestions] = useState(false);
+  const [citySearchTerm, setCitySearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCityId, setSelectedCityId] = useState(null);
   const { currentUser, logout } = useAuth();
@@ -218,17 +219,14 @@ const Dashboard = () => {
   // Get unique dates from bookings
   const uniqueDates = [...new Set(bookings.map(b => b.date))].filter(Boolean).sort();
 
-  // Get next event date (earliest future date)
-  const getNextEventDate = () => {
+  // Get all future event dates
+  const getAllFutureDates = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const futureDates = uniqueDates
-      .map(dateStr => new Date(dateStr))
-      .filter(date => date >= today)
-      .sort((a, b) => a - b);
-
-    return futureDates.length > 0 ? futureDates[0].toISOString().split('T')[0] : null;
+    return uniqueDates
+      .filter(dateStr => new Date(dateStr) >= today)
+      .sort((a, b) => new Date(a) - new Date(b));
   };
 
   // Calculate stats for a city based on date filter
@@ -276,24 +274,65 @@ const Dashboard = () => {
     setDateSearchTerm('');
   };
 
-  // Select next event
-  const selectNextEvent = () => {
-    const nextDate = getNextEventDate();
-    if (nextDate) {
-      setSelectedDates([nextDate]);
+  // Select all future events
+  const selectFutureEvents = () => {
+    const futureDates = getAllFutureDates();
+    if (futureDates.length > 0) {
+      setSelectedDates(futureDates);
       setDateSearchTerm('');
     }
   };
 
   const filteredCities = cities.filter(city => {
-    if (filter === 'all') return true;
-    return city.status === filter;
+    // Filter by status
+    if (filter !== 'all' && city.status !== filter) return false;
+
+    // Filter by selected dates - only show cities that have bookings for those dates
+    if (selectedDates.length > 0) {
+      const cityHasBookingsForDates = bookings.some(
+        b => b.cityId === city.id && selectedDates.includes(b.date) && b.status !== 'cancelled'
+      );
+      if (!cityHasBookingsForDates) return false;
+    }
+
+    // Filter by search term (city name or region)
+    if (citySearchTerm) {
+      const searchLower = citySearchTerm.toLowerCase();
+      const cityName = (city.name || '').toLowerCase();
+      const region = (city.region || '').toLowerCase();
+      return cityName.includes(searchLower) || region.includes(searchLower);
+    }
+
+    return true;
   });
+
+  // Calculate booking stats based on selected dates AND filtered cities
+  const getBookingStats = () => {
+    let filteredBookings = bookings;
+
+    // Filter by dates
+    if (selectedDates.length > 0) {
+      filteredBookings = filteredBookings.filter(b => selectedDates.includes(b.date));
+    }
+
+    // Filter by cities displayed in table
+    const filteredCityIds = filteredCities.map(c => c.id);
+    filteredBookings = filteredBookings.filter(b => filteredCityIds.includes(b.cityId));
+
+    return {
+      totalBookings: filteredBookings.length,
+      totalSpots: filteredBookings.reduce((sum, b) => sum + (b.spots || 0), 0)
+    };
+  };
+
+  const bookingStats = getBookingStats();
 
   const stats = {
     total: cities.length,
     available: cities.filter(c => c.status === 'available').length,
-    ended: cities.filter(c => c.status === 'ended').length
+    ended: cities.filter(c => c.status === 'ended').length,
+    bookings: bookingStats.totalBookings,
+    spots: bookingStats.totalSpots
   };
 
   return (
@@ -347,14 +386,43 @@ const Dashboard = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-1">Totale Città</div>
             <div className="text-3xl font-bold text-primary">{stats.total}</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {stats.available} disponibili • {stats.ended} terminati
+            </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 mb-1">Posti Disponibili</div>
-            <div className="text-3xl font-bold text-green-600">{stats.available}</div>
+            <div className="text-sm text-gray-600 mb-1">
+              Totale Prenotazioni
+              {selectedDates.length > 0 && (
+                <span className="ml-2 text-xs text-blue-600">
+                  ({selectedDates.length} {selectedDates.length === 1 ? 'data' : 'date'})
+                </span>
+              )}
+            </div>
+            <div className="text-3xl font-bold text-blue-600">{stats.bookings}</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {filter === 'all'
+                ? (selectedDates.length === 0 ? 'Tutte le città e date' : `Tutte le città • ${selectedDates.length} ${selectedDates.length === 1 ? 'data' : 'date'}`)
+                : (selectedDates.length === 0 ? `Città ${filter === 'available' ? 'disponibili' : 'terminate'}` : `${filter === 'available' ? 'Disponibili' : 'Terminate'} • ${selectedDates.length} ${selectedDates.length === 1 ? 'data' : 'date'}`)
+              }
+            </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="text-sm text-gray-600 mb-1">Eventi Terminati</div>
-            <div className="text-3xl font-bold text-gray-500">{stats.ended}</div>
+            <div className="text-sm text-gray-600 mb-1">
+              Totale Posti
+              {selectedDates.length > 0 && (
+                <span className="ml-2 text-xs text-purple-600">
+                  ({selectedDates.length} {selectedDates.length === 1 ? 'data' : 'date'})
+                </span>
+              )}
+            </div>
+            <div className="text-3xl font-bold text-purple-600">{stats.spots}</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {filter === 'all'
+                ? (selectedDates.length === 0 ? 'Tutte le città e date' : `Tutte le città • ${selectedDates.length} ${selectedDates.length === 1 ? 'data' : 'date'}`)
+                : (selectedDates.length === 0 ? `Città ${filter === 'available' ? 'disponibili' : 'terminate'}` : `${filter === 'available' ? 'Disponibili' : 'Terminate'} • ${selectedDates.length} ${selectedDates.length === 1 ? 'data' : 'date'}`)
+              }
+            </div>
           </div>
         </div>
 
@@ -372,10 +440,10 @@ const Dashboard = () => {
                 Tutti gli Eventi
               </button>
               <button
-                onClick={selectNextEvent}
+                onClick={selectFutureEvents}
                 className="px-3 py-1 text-xs sm:text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
-                Prossimo Evento
+                Prossimi Eventi
               </button>
             </div>
           </div>
@@ -447,52 +515,95 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-3 sm:px-4 py-2 text-sm rounded-lg ${
-                filter === 'all'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+        {/* Search and Actions */}
+        <div className="flex flex-col gap-4 mb-6">
+          {/* Search Bar */}
+          <div className="relative">
+            <input
+              type="text"
+              value={citySearchTerm}
+              onChange={(e) => setCitySearchTerm(e.target.value)}
+              placeholder="Cerca per nome città o regione..."
+              className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white shadow-sm"
+            />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              Tutte ({stats.total})
-            </button>
-            <button
-              onClick={() => setFilter('available')}
-              className={`px-3 sm:px-4 py-2 text-sm rounded-lg ${
-                filter === 'available'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Disponibili ({stats.available})
-            </button>
-            <button
-              onClick={() => setFilter('ended')}
-              className={`px-3 sm:px-4 py-2 text-sm rounded-lg ${
-                filter === 'ended'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Terminati ({stats.ended})
-            </button>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {citySearchTerm && (
+              <button
+                onClick={() => setCitySearchTerm('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2">
-            <button
-              onClick={() => handleOpenModal(null)}
-              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-secondary text-white rounded-lg hover:bg-secondary-light transition-colors"
-            >
-              <FaPlus />
-              <span className="hidden sm:inline">Aggiungi Città</span>
-              <span className="sm:hidden">Aggiungi</span>
-            </button>
+          {/* Filters and Add Button */}
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-3 sm:px-4 py-2 text-sm rounded-lg ${
+                  filter === 'all'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Tutte ({stats.total})
+              </button>
+              <button
+                onClick={() => setFilter('available')}
+                className={`px-3 sm:px-4 py-2 text-sm rounded-lg ${
+                  filter === 'available'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Disponibili ({stats.available})
+              </button>
+              <button
+                onClick={() => setFilter('ended')}
+                className={`px-3 sm:px-4 py-2 text-sm rounded-lg ${
+                  filter === 'ended'
+                    ? 'bg-primary text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Terminati ({stats.ended})
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => handleOpenModal(null)}
+                className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-secondary text-white rounded-lg hover:bg-secondary-light transition-colors"
+              >
+                <FaPlus />
+                <span className="hidden sm:inline">Aggiungi Città</span>
+                <span className="sm:hidden">Aggiungi</span>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Search Results Info */}
+        {citySearchTerm && (
+          <div className="mb-4 text-sm text-gray-600">
+            {filteredCities.length === 0 ? (
+              <span>Nessun risultato per "<strong>{citySearchTerm}</strong>"</span>
+            ) : (
+              <span>
+                {filteredCities.length} {filteredCities.length === 1 ? 'risultato' : 'risultati'} per "<strong>{citySearchTerm}</strong>"
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Cities Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -526,6 +637,12 @@ const Dashboard = () => {
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Posti Tot.
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Visite
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Conversione
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Azioni
@@ -569,14 +686,51 @@ const Dashboard = () => {
                       {city.eventData?.dates || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const today = new Date().toISOString().split('T')[0];
+                          navigate(`/admin/bookings?cityId=${city.id}&dateFrom=${today}`);
+                        }}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer"
+                        title="Vedi prenotazioni per questa città"
+                      >
                         {getCityStats(city.id).bookingsCount}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const today = new Date().toISOString().split('T')[0];
+                          navigate(`/admin/bookings?cityId=${city.id}&dateFrom=${today}`);
+                        }}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors cursor-pointer"
+                        title="Vedi prenotazioni per questa città"
+                      >
+                        {getCityStats(city.id).totalSpots}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                        {city.views || 0}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                        {getCityStats(city.id).totalSpots}
-                      </span>
+                      {(() => {
+                        const views = city.views || 0;
+                        const bookings = getCityStats(city.id).bookingsCount;
+                        const rate = views > 0 ? ((bookings / views) * 100).toFixed(1) : 0;
+                        return (
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                            rate >= 10 ? 'bg-green-100 text-green-800' :
+                            rate >= 5 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {rate}%
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button

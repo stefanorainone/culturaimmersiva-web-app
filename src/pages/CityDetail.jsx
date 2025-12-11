@@ -92,6 +92,29 @@ const CityDetail = () => {
           const firestoreCity = { id: cityDoc.id, ...cityDoc.data() };
           console.log('[CityDetail] Loaded from Firestore:', cityId, firestoreCity);
           setCity(firestoreCity);
+
+          // Track anonymous visit (unique per IP via Cloud Function)
+          const visitKey = `visited_${cityId}`;
+          if (!sessionStorage.getItem(visitKey)) {
+            // Call Cloud Function to track view (handles IP uniqueness server-side)
+            try {
+              const response = await fetch('https://us-central1-culturaimmersiva-it.cloudfunctions.net/trackPageView', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cityId })
+              });
+              const result = await response.json();
+              if (result.counted) {
+                console.log('[CityDetail] View counted for:', cityId);
+              } else {
+                console.log('[CityDetail] View already counted for this IP:', cityId);
+              }
+              // Mark as visited in session to avoid repeated calls
+              sessionStorage.setItem(visitKey, 'true');
+            } catch (viewError) {
+              console.log('[CityDetail] Could not track view:', viewError);
+            }
+          }
         } else {
           // Fallback: use static data if not in Firestore
           const staticCity = getCityById(cityId);
@@ -424,23 +447,29 @@ const CityDetail = () => {
             {/* Prezzo con gradient colorato e info esperienze integrate */}
             {cityDetail?.pricing && (
               <div className="bg-gradient-to-r from-primary to-secondary text-white rounded-lg p-3 mb-2 shadow-lg">
-                {/* Prezzi */}
-                <div className="flex items-center justify-between mb-3">
-                  {(cityDetail?.pricing?.group && cityDetail.pricing.group > 0) && (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xl font-bold">
-                        {cityDetail?.pricing?.group}{cityDetail?.pricing?.currency || '€'}
-                      </span>
-                      <span className="text-xs opacity-90">per 2 persone ({(cityDetail.pricing.group / 2).toFixed(0)}€/persona)</span>
-                    </div>
-                  )}
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-base font-bold">
-                      {cityDetail?.pricing?.currency || '€'}{cityDetail?.pricing?.individual}
-                    </span>
-                    <span className="text-xs opacity-90">singolo</span>
+                {/* Prezzi o Evento Gratuito */}
+                {(!cityDetail?.pricing?.individual || Number(cityDetail?.pricing?.individual) === 0) ? (
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <span className="text-2xl font-bold">Evento Gratuito</span>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-between mb-3">
+                    {(cityDetail?.pricing?.group && cityDetail.pricing.group > 0) && (
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-bold">
+                          {cityDetail?.pricing?.group}{cityDetail?.pricing?.currency || '€'}
+                        </span>
+                        <span className="text-xs opacity-90">per 2 persone ({(cityDetail.pricing.group / 2).toFixed(0)}€/persona)</span>
+                      </div>
+                    )}
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-base font-bold">
+                        {cityDetail?.pricing?.currency || '€'}{cityDetail?.pricing?.individual}
+                      </span>
+                      <span className="text-xs opacity-90">singolo</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Separatore */}
                 <div className="border-t border-white/30 mb-2"></div>
@@ -465,16 +494,10 @@ const CityDetail = () => {
                 </div>
               )}
               {cityDetail?.booking?.limitedSpots && (
-                <>
-                  <div className="bg-orange-50 border border-orange-200 rounded px-2 py-1 flex items-center gap-1">
-                    <span className="text-orange-600">⚡</span>
-                    <span className="font-semibold text-orange-800">Posti limitati</span>
-                  </div>
-                  <div className="bg-red-50 border border-red-200 rounded px-2 py-1 flex items-center gap-1">
-                    <span className="text-red-600">⚠</span>
-                    <span className="font-semibold text-red-800">Prenotazione obbligatoria</span>
-                  </div>
-                </>
+                <div className="bg-red-50 border border-red-200 rounded px-2 py-1 flex items-center gap-1">
+                  <span className="text-red-600">⚠</span>
+                  <span className="font-semibold text-red-800">Prenotazione obbligatoria</span>
+                </div>
               )}
             </div>
 
@@ -500,7 +523,7 @@ const CityDetail = () => {
                 <div className="bg-gray-50 p-3 rounded-lg flex items-center gap-3">
                   <FaMapMarkerAlt className="text-secondary text-base flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-600">Location</p>
+                    <p className="text-xs text-gray-600">Indirizzo</p>
                     <p className="text-sm font-semibold text-gray-800">{cityDetail?.location?.name}</p>
                     {cityDetail?.location?.address && (
                       <p className="text-xs text-gray-600 mt-0.5">{cityDetail.location.address}</p>
@@ -622,7 +645,7 @@ const CityDetail = () => {
                       <div className="flex items-start gap-3">
                         <FaMapMarkerAlt className="text-secondary text-xl mt-1" />
                         <div>
-                          <h4 className="font-semibold text-primary mb-1">Location</h4>
+                          <h4 className="font-semibold text-primary mb-1">Indirizzo</h4>
                           <p className="text-gray-700 font-medium">{cityDetail?.location?.name}</p>
                           {cityDetail?.location?.address && (
                             <p className="text-gray-600 text-sm">{cityDetail?.location?.address}</p>
@@ -731,38 +754,46 @@ const CityDetail = () => {
                     <h3 className="text-2xl font-bold text-primary mb-6">Prezzi</h3>
 
                     <div className="space-y-4 mb-6">
-                      {cityDetail?.pricing?.individual && (
-                        <div className="bg-white rounded-lg p-4 border border-gray-200">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-gray-600 mb-1">Biglietto Individuale</p>
-                              <p className="text-3xl font-bold text-primary">
-                                {cityDetail?.pricing?.currency || '€'}{cityDetail?.pricing?.individual}
-                              </p>
-                              {cityDetail?.pricing?.note && (
-                                <p className="text-xs text-gray-500 mt-1">{cityDetail?.pricing?.note}</p>
-                              )}
-                            </div>
-                            <FaUser className="text-secondary text-3xl" />
+                      {(!cityDetail?.pricing?.individual || Number(cityDetail?.pricing?.individual) === 0) ? (
+                        <div className="bg-gradient-to-r from-primary to-secondary text-white rounded-lg p-4">
+                          <div className="flex items-center justify-center gap-3">
+                            <span className="text-3xl font-bold">Evento Gratuito</span>
                           </div>
                         </div>
-                      )}
+                      ) : (
+                        <>
+                          <div className="bg-white rounded-lg p-4 border border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-gray-600 mb-1">Biglietto Individuale</p>
+                                <p className="text-3xl font-bold text-primary">
+                                  {cityDetail?.pricing?.currency || '€'}{cityDetail?.pricing?.individual}
+                                </p>
+                                {cityDetail?.pricing?.note && (
+                                  <p className="text-xs text-gray-500 mt-1">{cityDetail?.pricing?.note}</p>
+                                )}
+                              </div>
+                              <FaUser className="text-secondary text-3xl" />
+                            </div>
+                          </div>
 
-                      {(cityDetail?.pricing?.group && cityDetail.pricing.group > 0) && (
-                        <div className="bg-white rounded-lg p-4 border border-gray-200">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-gray-600 mb-1">Biglietto a Coppia</p>
-                              <p className="text-3xl font-bold text-primary">
-                                {cityDetail?.pricing?.currency || '€'}{cityDetail?.pricing?.group}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                ({cityDetail?.pricing?.currency || '€'}{(cityDetail?.pricing?.group / (cityDetail?.pricing?.groupSize || 2)).toFixed(2)}/persona)
-                              </p>
+                          {(cityDetail?.pricing?.group && cityDetail.pricing.group > 0) && (
+                            <div className="bg-white rounded-lg p-4 border border-gray-200">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm text-gray-600 mb-1">Biglietto a Coppia</p>
+                                  <p className="text-3xl font-bold text-primary">
+                                    {cityDetail?.pricing?.currency || '€'}{cityDetail?.pricing?.group}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    ({cityDetail?.pricing?.currency || '€'}{(cityDetail?.pricing?.group / (cityDetail?.pricing?.groupSize || 2)).toFixed(2)}/persona)
+                                  </p>
+                                </div>
+                                <FaUsers className="text-secondary text-2xl" />
+                              </div>
                             </div>
-                            <FaUsers className="text-secondary text-2xl" />
-                          </div>
-                        </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </>
@@ -796,11 +827,14 @@ const CityDetail = () => {
                   {city.status === 'available' ? (
                     <>
                       <Link to={`/booking/${cityId}`} className="btn-primary w-full text-center block">
-                        Verifica Disponibilità
+                        Verifica orari disponibili
                       </Link>
-                      <p className="text-sm text-gray-600 text-center mt-4">
-                        Controlla gli orari disponibili
-                      </p>
+                      {cityDetail?.booking?.limitedSpots && (
+                        <p className="text-sm text-orange-600 text-center mt-3 flex items-center justify-center gap-1">
+                          <span>⚡</span>
+                          <span className="font-semibold">I ticket potrebbero terminare in fretta</span>
+                        </p>
+                      )}
                     </>
                   ) : (
                     <div className="text-center py-4">
@@ -886,8 +920,14 @@ const CityDetail = () => {
             to={`/booking/${cityId}`}
             className="btn-secondary w-full text-center block py-4 text-lg font-bold shadow-xl"
           >
-            Verifica Disponibilità
+            Verifica orari disponibili
           </Link>
+          {cityDetail?.booking?.limitedSpots && (
+            <p className="text-xs text-orange-600 text-center mt-2 flex items-center justify-center gap-1">
+              <span>⚡</span>
+              <span className="font-semibold">I ticket potrebbero terminare in fretta</span>
+            </p>
+          )}
         </div>
       )}
     </div>

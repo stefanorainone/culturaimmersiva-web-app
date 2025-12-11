@@ -2,10 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../config/firebase';
 import {
-  collection,
-  query,
-  where,
-  getDocs,
+  getDoc,
   updateDoc,
   doc
 } from 'firebase/firestore';
@@ -26,29 +23,26 @@ const BookingCancel = () => {
 
   const loadBooking = async () => {
     try {
-      const bookingsQuery = query(
-        collection(db, 'bookings'),
-        where('token', '==', token)
-      );
+      // Security improvement: Use token as document ID for direct access
+      // This prevents enumeration attacks and doesn't require list permission
+      const bookingDoc = await getDoc(doc(db, 'bookings', token));
 
-      const snapshot = await getDocs(bookingsQuery);
-
-      if (snapshot.empty) {
+      if (!bookingDoc.exists()) {
         alert('❌ Prenotazione non trovata o link non valido');
         navigate('/');
         return;
       }
 
-      const bookingDoc = snapshot.docs[0];
       const bookingData = { id: bookingDoc.id, ...bookingDoc.data() };
 
-      // Check if token is expired
-      if (bookingData.tokenExpiry) {
-        const expiryDate = new Date(bookingData.tokenExpiry);
+      // Check if event date has passed (link valid until end of event day)
+      if (bookingData.date) {
+        const eventDate = new Date(bookingData.date);
+        eventDate.setHours(23, 59, 59, 999);
         const now = new Date();
-        if (now > expiryDate) {
-          alert('⚠️ Questo link è scaduto. Contattaci per annullare la tua prenotazione.');
-          navigate('/contatti');
+        if (now > eventDate) {
+          alert('⚠️ Questo link è scaduto. L\'evento è già passato.');
+          navigate('/');
           return;
         }
       }

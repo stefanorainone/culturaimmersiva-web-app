@@ -17,6 +17,13 @@ service cloud.firestore {
       allow update: if request.auth == null
                     && onlyUpdatingBookedSlots()
                     && validBookedSlotsUpdate();
+
+      // Subcollection for tracking unique views per IP (written by Cloud Function)
+      match /views/{viewId} {
+        // Only Cloud Functions (admin SDK) can write
+        // Public can't read or write
+        allow read, write: if false;
+      }
     }
 
     // Helper function: Check if only bookedSlots field is being updated
@@ -27,38 +34,72 @@ service cloud.firestore {
 
     // Helper function: Validate bookedSlots updates are increments only (security)
     function validBookedSlotsUpdate() {
-      // Ensure all slot counters only increase (never decrease)
-      // This prevents malicious users from reducing counters
-      let oldSlots = resource.data.get('bookedSlots', {});
-      let newSlots = request.resource.data.bookedSlots;
-
-      // Check that no slot counter decreased
-      return newSlots.keys().toSet().difference(oldSlots.keys().toSet()).size() >= 0;
-      // Note: We can't easily validate increment amounts in Firestore rules
-      // but the transaction logic in the app ensures atomicity
+      // Basic validation: ensure bookedSlots exists and is a map
+      // The application uses atomic transactions to ensure only increments occur
+      // Additional validation in security rules is limited due to language constraints
+      return request.resource.data.bookedSlots is map;
     }
 
     // Bookings collection
     match /bookings/{bookingId} {
-      // Everyone can read bookings (to show available spots in real-time)
-      allow read: if true;
+      // Read permissions:
+      // 1. Authenticated users (admin) can read all bookings
+      // 2. Public users can only query with a valid token (for magic links)
+      // Note: We can't validate query parameters in Firestore rules, so we rely on
+      // the app to only query with tokens and not expose all bookings
+      allow get: if request.auth != null ||
+                    (resource.data.token != null && resource.data.token.size() > 0);
+
+      // List/query is restricted to authenticated users only (admin)
+      // This prevents enumeration attacks where someone could list all bookings
+      allow list: if request.auth != null;
 
       // Everyone can create bookings (public booking system)
+      // Validate required fields and sensible limits
       allow create: if request.resource.data.keys().hasAll(['cityId', 'date', 'time', 'name', 'email', 'spots'])
                     && request.resource.data.spots is int
                     && request.resource.data.spots > 0
-                    && request.resource.data.spots <= 50;
+                    && request.resource.data.spots <= 50
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() >= 2
+                    && request.resource.data.email is string
+                    && request.resource.data.email.matches('.*@.*\\..*');
 
       // Allow update if:
       // 1. User is authenticated (admin) OR
       // 2. Token matches (magic link) and token is not being changed
       allow update: if request.auth != null ||
                     (resource.data.token == request.resource.data.token &&
-                     resource.data.token != null);
+                     resource.data.token != null &&
+                     request.resource.data.token == resource.data.token);
 
       // Only authenticated users (admin) can delete
       // Regular users should cancel by updating status to 'cancelled'
       allow delete: if request.auth != null;
+    }
+
+    // Timeslots collection
+    match /timeslots/{slotId} {
+      // Everyone can read timeslots
+      allow read: if true;
+
+      // Authenticated users (admin) can create, update, delete
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // Settings collection
+    match /settings/{settingId} {
+      // Everyone can read settings
+      allow read: if true;
+
+      // Only authenticated users (admin) can write
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // Reminder History collection
+    match /reminderHistory/{historyId} {
+      // Only authenticated users (admin) can read/write
+      allow read, write: if request.auth != null;
     }
 
     // Block all other collections by default

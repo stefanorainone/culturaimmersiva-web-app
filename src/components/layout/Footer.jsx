@@ -52,7 +52,10 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start space-x-3">
                 <FaMapMarkerAlt className="text-secondary mt-1 flex-shrink-0" />
-                <span className="text-gray-300 text-sm">Italia</span>
+                <span className="text-gray-300 text-sm">
+                  Via Mauro 9<br />
+                  80036 Palma Campania (NA)
+                </span>
               </li>
               <li className="flex items-start space-x-3">
                 <FaEnvelope className="text-secondary mt-1 flex-shrink-0" />
@@ -124,18 +127,24 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-gray-700">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-gray-300">
-              © {currentYear} Cultura Immersiva. Tutti i diritti riservati.
-            </p>
-            <div className="mt-4 md:mt-0">
-              <a
-                href="https://docs.google.com/document/d/1R886H8XewRz14Sbo5ro72emFt7BYlD5ApsTEie-MmME/edit?usp=sharing"
-                target="_blank"
-                rel="noopener noreferrer"
+            <div className="text-sm text-gray-300 text-center md:text-left">
+              <p>© {currentYear} Cultura Immersiva. Tutti i diritti riservati.</p>
+              <p className="text-xs mt-1">P.IVA: 09880501219</p>
+            </div>
+            <div className="mt-4 md:mt-0 flex gap-4">
+              <Link
+                to="/privacy-policy"
                 className="text-sm text-gray-300 hover:text-secondary transition-colors"
               >
                 Privacy Policy
-              </a>
+              </Link>
+              <span className="text-gray-500">|</span>
+              <Link
+                to="/termini-condizioni"
+                className="text-sm text-gray-300 hover:text-secondary transition-colors"
+              >
+                Termini e Condizioni
+              </Link>
             </div>
           </div>
         </div>

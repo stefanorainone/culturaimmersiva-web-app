@@ -17,6 +17,8 @@ import Schools from './pages/Schools';
 import Museums from './pages/Museums';
 import Hotels from './pages/Hotels';
 import Contact from './pages/Contact';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsConditions from './pages/TermsConditions';
 import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminBookings from './pages/admin/Bookings';
@@ -47,6 +49,8 @@ function App() {
                   <Route path="/musei" element={<Museums />} />
                   <Route path="/hotel" element={<Hotels />} />
                   <Route path="/contatti" element={<Contact />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/termini-condizioni" element={<TermsConditions />} />
                 </Routes>
               </main>
               <Footer />

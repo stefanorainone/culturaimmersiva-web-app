@@ -8,7 +8,7 @@ function WhatsAppButton() {
 
   // Se siamo nella pagina città, posizione più in alto (bottom-24) per non sovrapporsi al FAB
   const isCityPage = location.pathname.startsWith('/citta/');
-  const bottomClass = isCityPage ? 'bottom-24 md:bottom-6' : 'bottom-6';
+  const bottomClass = isCityPage ? 'bottom-32 md:bottom-6' : 'bottom-6';
 
   return (
     <a

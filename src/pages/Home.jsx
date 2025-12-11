@@ -142,6 +142,12 @@ const Home = () => {
       link: '/musei'
     },
     {
+      icon: <FaSchool className="text-5xl text-secondary" />,
+      title: 'Scuole e Università',
+      description: 'Contenuti VR educativi dedicati alle istituzioni scolastiche.',
+      link: '/scuole'
+    },
+    {
       icon: <FaVrCardboard className="text-5xl text-secondary" />,
       title: 'Eventi e Fiere',
       description: 'Esperienze VR per i partecipanti e opportunità di promozione del brand nel metaverso per gli sponsor.',
@@ -152,12 +158,6 @@ const Home = () => {
       title: 'Hotel / B&B',
       description: 'Contenuti VR che promuovono le attività locali e le eccellenze regionali.',
       link: '/hotel'
-    },
-    {
-      icon: <FaSchool className="text-5xl text-secondary" />,
-      title: 'Scuole e Università',
-      description: 'Contenuti VR educativi dedicati alle istituzioni scolastiche.',
-      link: '/scuole'
     },
   ];
 
