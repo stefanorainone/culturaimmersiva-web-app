@@ -11,6 +11,7 @@ const Header = () => {
     { path: '/scuole', label: 'Scuole' },
     { path: '/musei', label: 'Musei' },
     { path: '/hotel', label: 'Hotel / B&B' },
+    { path: '/blog', label: 'Blog' },
     { path: '/contatti', label: 'Contatti' },
   ];
 

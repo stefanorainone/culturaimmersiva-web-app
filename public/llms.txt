@@ -1,0 +1,63 @@
+# Cultura Immersiva
+
+> Sviluppo di esperienze immersive, software, app mobile e VR per musei, comuni, associazioni e aziende private.
+
+Cultura Immersiva è un'azienda italiana specializzata nello sviluppo di soluzioni tecnologiche immersive per la valorizzazione del patrimonio culturale e la comunicazione aziendale.
+
+## I Nostri Servizi
+
+### Sviluppo Software e App
+- **App mobile** per iOS e Android
+- **Web app** e piattaforme digitali
+- **Software personalizzato** per esigenze specifiche
+- **Sistemi di prenotazione** e gestione eventi
+
+### Esperienze VR e Immersive
+- **Tour virtuali** per musei e siti culturali
+- **Ricostruzioni storiche 3D** di monumenti e città antiche
+- **Esperienze VR interattive** per fiere ed eventi
+- **Installazioni immersive** per mostre e spazi espositivi
+
+### Servizi per Enti e Aziende
+- **Musei e siti archeologici**: Digitalizzazione collezioni, tour virtuali, guide interattive
+- **Comuni e PA**: Valorizzazione territorio, turismo digitale, smart city
+- **Associazioni culturali**: Progetti di divulgazione, eventi immersivi
+- **Aziende private**: Formazione VR, showroom virtuali, marketing esperienziale
+
+## Clienti e Partner
+
+Lavoriamo con:
+- Musei e fondazioni culturali
+- Comuni e amministrazioni pubbliche
+- Associazioni e organizzazioni no-profit
+- Aziende private di ogni settore
+
+## Le Nostre Esperienze VR
+
+Organizziamo tour VR dal vivo in oltre 40 città italiane:
+- Prenotazione gratuita online
+- Pagamento solo sul posto
+- Esperienze guidate con visori di ultima generazione
+
+### Città Disponibili
+Roma, Milano, Napoli, Firenze, Venezia, Bologna, Torino, Palermo, Genova, Bari e molte altre.
+
+## Perché Sceglierci
+
+- **Esperienza**: Team specializzato in realtà virtuale e sviluppo software
+- **Personalizzazione**: Soluzioni su misura per ogni esigenza
+- **Tecnologia**: Utilizzo delle più moderne tecnologie VR/AR
+- **Supporto**: Assistenza completa dalla progettazione al deployment
+
+## Contatti
+
+- **Sito web**: https://culturaimmersiva.it
+- **Email**: info@culturaimmersiva.it
+
+Per progetti di sviluppo software, app mobile o esperienze VR personalizzate, contattaci per un preventivo gratuito.
+
+## Link Utili
+
+- Homepage: https://culturaimmersiva.it
+- Privacy Policy: https://culturaimmersiva.it/privacy-policy
+- Termini e Condizioni: https://culturaimmersiva.it/termini-condizioni

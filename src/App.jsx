@@ -19,11 +19,14 @@ import Hotels from './pages/Hotels';
 import Contact from './pages/Contact';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsConditions from './pages/TermsConditions';
+import Blog from './pages/Blog';
+import BlogArticle from './pages/BlogArticle';
 import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminBookings from './pages/admin/Bookings';
 import AdminReminders from './pages/admin/Reminders';
 import AdminFixSlots from './pages/admin/FixSlots';
+import AdminArticles from './pages/admin/Articles';
 import CityForm from './pages/admin/CityForm';
 
 function App() {
@@ -51,6 +54,8 @@ function App() {
                   <Route path="/contatti" element={<Contact />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/termini-condizioni" element={<TermsConditions />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/:slug" element={<BlogArticle />} />
                 </Routes>
               </main>
               <Footer />
@@ -81,6 +86,11 @@ function App() {
           <Route path="/admin/fix-slots" element={
             <ProtectedRoute>
               <AdminFixSlots />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/articles" element={
+            <ProtectedRoute>
+              <AdminArticles />
             </ProtectedRoute>
           } />
           <Route path="/admin/cities/:id" element={
