@@ -61,7 +61,7 @@ const Cities = () => {
       <section className="bg-gradient-to-r from-primary to-primary-dark text-white py-20">
         <div className="container-custom text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Le Nostre Città
+            Le città aperte alla cultura immersiva
           </h1>
           <p className="text-xl md:text-2xl max-w-3xl mx-auto">
             Oltre 40 destinazioni italiane per vivere esperienze culturali immersive in realtà virtuale

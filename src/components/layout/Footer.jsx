@@ -25,7 +25,7 @@ const Footer = () => {
             <ul className="space-y-2">
               <li>
                 <Link to="/citta" className="text-gray-300 hover:text-secondary transition-colors text-sm">
-                  Le Nostre Città
+                  Le Città
                 </Link>
               </li>
               <li>
