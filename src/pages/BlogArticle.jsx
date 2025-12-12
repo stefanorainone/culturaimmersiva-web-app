@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { db } from '../config/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { FaCalendar, FaClock, FaArrowLeft, FaLinkedin, FaFacebook, FaTwitter, FaList } from 'react-icons/fa';
+import { FaCalendar, FaClock, FaArrowLeft, FaLinkedin, FaFacebook, FaTwitter, FaList, FaWhatsapp } from 'react-icons/fa';
 import DOMPurify from 'dompurify';
 
 const BlogArticle = () => {
@@ -423,10 +423,13 @@ const BlogArticle = () => {
             Raccontaci la tua idea, troviamo insieme la soluzione migliore.
           </p>
           <a
-            href="mailto:info@culturaimmersiva.it"
-            className="inline-block px-6 py-3 bg-white text-primary font-bold rounded-lg hover:bg-gray-100 transition-colors"
+            href="https://wa.me/393292890532?text=Ciao! Ho letto un articolo sul blog e vorrei maggiori informazioni."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#25D366] text-white font-bold rounded-lg hover:bg-[#20BA5C] transition-colors"
           >
-            Scrivici
+            <FaWhatsapp className="text-xl" />
+            Scrivici su WhatsApp
           </a>
         </div>
 
@@ -461,6 +464,17 @@ const BlogArticle = () => {
           </div>
         )}
       </div>
+
+      {/* WhatsApp FAB - Mobile Only */}
+      <a
+        href="https://wa.me/393292890532?text=Ciao! Ho letto un articolo sul blog e vorrei maggiori informazioni."
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 md:hidden bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:bg-[#20BA5C] transition-all hover:scale-110 flex items-center justify-center"
+        aria-label="Contattaci su WhatsApp"
+      >
+        <FaWhatsapp className="text-2xl" />
+      </a>
     </div>
   );
 };
