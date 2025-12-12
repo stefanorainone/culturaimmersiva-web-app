@@ -64,7 +64,7 @@ const Cities = () => {
             Le città aperte alla cultura immersiva
           </h1>
           <p className="text-xl md:text-2xl max-w-3xl mx-auto">
-            Oltre 40 destinazioni italiane per vivere esperienze culturali immersive in realtà virtuale
+            Oltre 50 destinazioni italiane per vivere esperienze culturali immersive in realtà virtuale
           </p>
         </div>
       </section>

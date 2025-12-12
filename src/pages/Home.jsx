@@ -372,7 +372,7 @@ const Home = () => {
               Città in Evidenza
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Oltre 40 destinazioni italiane ti aspettano
+              Oltre 50 destinazioni italiane ti aspettano
             </p>
           </div>
 
