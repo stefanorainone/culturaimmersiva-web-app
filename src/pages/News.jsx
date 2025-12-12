@@ -174,7 +174,7 @@ const News = () => {
               Facebook
             </a>
             <a
-              href="https://www.instagram.com/culturaimmersiva"
+              href="https://www.instagram.com/cultura.immersiva"
               target="_blank"
               rel="noopener noreferrer"
               className="px-6 py-3 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white font-bold rounded-lg hover:opacity-90 transition-opacity"
