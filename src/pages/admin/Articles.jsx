@@ -19,8 +19,32 @@ const AdminArticles = () => {
     coverImage: '',
     readTime: 5,
     published: false,
-    publishedAt: null
+    publishedAt: null,
+    type: 'blog' // 'blog' or 'news'
   };
+
+  const [filterType, setFilterType] = useState('all');
+
+  const blogCategories = [
+    'VR e Musei',
+    'Sviluppo Software',
+    'App Mobile',
+    'Digitalizzazione',
+    'Guide Pratiche',
+    'Consigli Pratici',
+    'Prezzi e Budget',
+    'Finanziamenti',
+    'Innovazione',
+    'Accessibilità',
+    'Eventi'
+  ];
+
+  const newsCategories = [
+    'Eventi',
+    'Bandi',
+    'Tecnologia',
+    'Partnership'
+  ];
 
   useEffect(() => {
     loadArticles();
@@ -206,6 +230,18 @@ const AdminArticles = () => {
                   </div>
 
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                    <select
+                      value={editingArticle.type || 'blog'}
+                      onChange={(e) => setEditingArticle({ ...editingArticle, type: e.target.value, category: '' })}
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="blog">Articolo Blog</option>
+                      <option value="news">News</option>
+                    </select>
+                  </div>
+
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
                     <select
                       value={editingArticle.category}
@@ -213,11 +249,9 @@ const AdminArticles = () => {
                       className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary"
                     >
                       <option value="">Seleziona categoria</option>
-                      <option value="VR e Musei">VR e Musei</option>
-                      <option value="Sviluppo Software">Sviluppo Software</option>
-                      <option value="App Mobile">App Mobile</option>
-                      <option value="Digitalizzazione">Digitalizzazione</option>
-                      <option value="Guide">Guide</option>
+                      {(editingArticle.type === 'news' ? newsCategories : blogCategories).map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -272,6 +306,26 @@ const AdminArticles = () => {
               <FaArrowLeft />
             </Link>
             <h1 className="text-2xl font-bold text-gray-800">Gestione Articoli</h1>
+            <div className="flex gap-2 ml-4">
+              <button
+                onClick={() => setFilterType('all')}
+                className={`px-3 py-1 text-sm rounded-full ${filterType === 'all' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'}`}
+              >
+                Tutti
+              </button>
+              <button
+                onClick={() => setFilterType('blog')}
+                className={`px-3 py-1 text-sm rounded-full ${filterType === 'blog' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'}`}
+              >
+                Blog
+              </button>
+              <button
+                onClick={() => setFilterType('news')}
+                className={`px-3 py-1 text-sm rounded-full ${filterType === 'news' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'}`}
+              >
+                News
+              </button>
+            </div>
           </div>
           <button
             onClick={() => { setEditingArticle({ ...emptyArticle }); setIsCreating(true); }}
@@ -307,11 +361,20 @@ const AdminArticles = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {articles.map((article) => (
+                {articles
+                  .filter(a => filterType === 'all' || (a.type || 'blog') === filterType)
+                  .map((article) => (
                   <tr key={article.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-800">{article.title}</div>
-                      <div className="text-sm text-gray-500">/blog/{article.slug}</div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                          article.type === 'news' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                        }`}>
+                          {article.type === 'news' ? 'NEWS' : 'BLOG'}
+                        </span>
+                        <span className="font-medium text-gray-800">{article.title}</span>
+                      </div>
+                      <div className="text-sm text-gray-500">/{article.type === 'news' ? 'news' : 'blog'}/{article.slug}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded">
@@ -338,7 +401,7 @@ const AdminArticles = () => {
                       <div className="flex items-center justify-end gap-2">
                         {article.published && (
                           <a
-                            href={`/blog/${article.slug}`}
+                            href={`/${article.type === 'news' ? 'news' : 'blog'}/${article.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="p-2 text-gray-600 hover:text-primary"

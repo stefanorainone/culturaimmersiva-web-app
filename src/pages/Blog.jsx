@@ -18,7 +18,7 @@ const Blog = () => {
       const snapshot = await getDocs(collection(db, 'articles'));
       const articlesData = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(article => article.published === true)
+        .filter(article => article.published === true && (article.type || 'blog') === 'blog')
         .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
       setArticles(articlesData);
     } catch (error) {

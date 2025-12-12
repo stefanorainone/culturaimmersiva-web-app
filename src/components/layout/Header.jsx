@@ -12,6 +12,7 @@ const Header = () => {
     { path: '/musei', label: 'Musei' },
     { path: '/hotel', label: 'Hotel / B&B' },
     { path: '/blog', label: 'Blog' },
+    { path: '/news', label: 'News' },
     { path: '/contatti', label: 'Contatti' },
   ];
 

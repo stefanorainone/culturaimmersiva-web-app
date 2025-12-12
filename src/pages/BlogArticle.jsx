@@ -32,6 +32,13 @@ const BlogArticle = () => {
       }
 
       const articleData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+
+      // Redirect to news page if this is a news article
+      if (articleData.type === 'news') {
+        navigate(`/news/${slug}`);
+        return;
+      }
+
       setArticle(articleData);
 
       // Update page title and meta

@@ -21,6 +21,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsConditions from './pages/TermsConditions';
 import Blog from './pages/Blog';
 import BlogArticle from './pages/BlogArticle';
+import News from './pages/News';
+import NewsArticle from './pages/NewsArticle';
 import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminBookings from './pages/admin/Bookings';
@@ -56,6 +58,8 @@ function App() {
                   <Route path="/termini-condizioni" element={<TermsConditions />} />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/blog/:slug" element={<BlogArticle />} />
+                  <Route path="/news" element={<News />} />
+                  <Route path="/news/:slug" element={<NewsArticle />} />
                 </Routes>
               </main>
               <Footer />
