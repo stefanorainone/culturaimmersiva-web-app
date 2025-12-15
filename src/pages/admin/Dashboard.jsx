@@ -5,26 +5,29 @@ import { db } from '../../config/firebase';
 import {
   collection,
   getDocs,
-  deleteDoc,
   doc,
   query,
   orderBy,
   updateDoc
 } from 'firebase/firestore';
-import { FaPlus, FaEdit, FaTrash, FaSignOutAlt, FaCity, FaCalendarCheck, FaCopy, FaExternalLinkAlt, FaBell } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaSignOutAlt, FaCity, FaCalendarCheck, FaCopy, FaBell, FaBan } from 'react-icons/fa';
 import CityModal from '../../components/admin/CityModal';
 
 const Dashboard = () => {
   const [cities, setCities] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('available');
   const [selectedDates, setSelectedDates] = useState([]); // Array of selected dates
   const [dateSearchTerm, setDateSearchTerm] = useState('');
   const [showDateSuggestions, setShowDateSuggestions] = useState(false);
   const [citySearchTerm, setCitySearchTerm] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCityId, setSelectedCityId] = useState(null);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cityToCancel, setCityToCancel] = useState(null);
+  const [cancelMessage, setCancelMessage] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -159,27 +162,86 @@ const Dashboard = () => {
     }
   };
 
-  const handleDelete = async (cityId) => {
-    if (!window.confirm('Sei sicuro di voler eliminare questa città?')) {
-      return;
-    }
+  const handleOpenCancelModal = (city) => {
+    setCityToCancel(city);
+    setCancelMessage(`Siamo spiacenti di informarti che l'evento "${city.name}" è stato annullato. Ci scusiamo per il disagio.`);
+    setCancelModalOpen(true);
+  };
 
-    console.log('[Dashboard] Deleting city:', cityId);
+  const handleCancelEvent = async () => {
+    if (!cityToCancel || !cancelMessage.trim()) return;
+
+    setIsCancelling(true);
 
     try {
-      await deleteDoc(doc(db, 'cities', cityId));
-      console.log('[Dashboard] City deleted successfully from Firestore');
+      // Get all confirmed bookings for this city
+      const cityBookings = bookings.filter(
+        b => b.cityId === cityToCancel.id && b.status === 'confirmed'
+      );
+
+      console.log(`Annullamento evento ${cityToCancel.name}: ${cityBookings.length} prenotazioni`);
+
+      // Cancel each booking and send email
+      for (const booking of cityBookings) {
+        // Update booking status
+        await updateDoc(doc(db, 'bookings', booking.id), {
+          status: 'cancelled',
+          cancelledAt: new Date().toISOString(),
+          cancelReason: 'Evento annullato'
+        });
+
+        // Send cancellation email via Cloud Function
+        try {
+          await fetch('https://us-central1-culturaimmersiva-it.cloudfunctions.net/sendAdminCancellation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              data: {
+                booking: {
+                  name: booking.name,
+                  email: booking.email,
+                  cityName: booking.cityName,
+                  date: booking.date,
+                  time: booking.time,
+                  spots: booking.spots,
+                  locationName: booking.locationName || '',
+                  locationAddress: booking.locationAddress || ''
+                },
+                reason: cancelMessage
+              }
+            })
+          });
+          console.log(`Email inviata a ${booking.email}`);
+        } catch (emailError) {
+          console.error(`Errore invio email a ${booking.email}:`, emailError);
+        }
+      }
+
+      // Update city status to ended
+      await updateDoc(doc(db, 'cities', cityToCancel.id), {
+        status: 'ended'
+      });
 
       // Update local state
-      setCities(cities.filter(city => city.id !== cityId));
-      console.log('[Dashboard] Local state updated');
+      setCities(cities.map(c =>
+        c.id === cityToCancel.id ? { ...c, status: 'ended' } : c
+      ));
+      setBookings(bookings.map(b =>
+        b.cityId === cityToCancel.id && b.status === 'confirmed'
+          ? { ...b, status: 'cancelled' }
+          : b
+      ));
 
-      alert('Città eliminata con successo!');
+      alert(`Evento annullato!\n\n${cityBookings.length} prenotazioni cancellate e notificate via email.`);
+      setCancelModalOpen(false);
+      setCityToCancel(null);
+      setCancelMessage('');
+
     } catch (error) {
-      console.error('[Dashboard] Error deleting city:', error);
-      console.error('[Dashboard] Error code:', error.code);
-      console.error('[Dashboard] Error message:', error.message);
-      alert(`Errore durante l'eliminazione della città:\n${error.message || error.code || 'Errore sconosciuto'}`);
+      console.error('Errore durante annullamento:', error);
+      alert(`Errore durante l'annullamento: ${error.message}`);
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -753,16 +815,18 @@ const Dashboard = () => {
                       >
                         <FaEdit className="inline" />
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(city.id);
-                        }}
-                        className="text-red-600 hover:text-red-900"
-                        title="Elimina città"
-                      >
-                        <FaTrash className="inline" />
-                      </button>
+                      {city.status === 'available' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenCancelModal(city);
+                          }}
+                          className="text-red-600 hover:text-red-900"
+                          title="Annulla evento"
+                        >
+                          <FaBan className="inline" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -780,6 +844,70 @@ const Dashboard = () => {
         cityId={selectedCityId}
         onSave={handleSaveCity}
       />
+
+      {/* Cancel Event Modal */}
+      {cancelModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+            <h3 className="text-xl font-bold text-red-600 mb-4 flex items-center gap-2">
+              <FaBan /> Annulla Evento
+            </h3>
+
+            <div className="mb-4">
+              <p className="text-gray-700 mb-2">
+                Stai per annullare l'evento <strong>{cityToCancel?.name}</strong>.
+              </p>
+              <p className="text-sm text-gray-600">
+                {bookings.filter(b => b.cityId === cityToCancel?.id && b.status === 'confirmed').length} prenotazioni verranno cancellate e notificate via email.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Messaggio da inviare ai clienti:
+              </label>
+              <textarea
+                value={cancelMessage}
+                onChange={(e) => setCancelMessage(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                placeholder="Inserisci il messaggio da inviare..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setCancelModalOpen(false);
+                  setCityToCancel(null);
+                  setCancelMessage('');
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                disabled={isCancelling}
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleCancelEvent}
+                disabled={isCancelling || !cancelMessage.trim()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isCancelling ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    Annullamento in corso...
+                  </>
+                ) : (
+                  <>
+                    <FaBan />
+                    Conferma Annullamento
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

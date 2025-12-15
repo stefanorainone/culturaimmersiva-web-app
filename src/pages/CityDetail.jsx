@@ -478,7 +478,7 @@ const CityDetail = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-lg">✨</span>
                   <p className="text-sm font-medium">
-                    2 Esperienze immersive incluse nel ticket
+                    {cityDetail?.experiencesPerTicket || 2} Esperien{(cityDetail?.experiencesPerTicket || 2) === 1 ? 'za immersiva inclusa' : 'ze immersive incluse'} nel ticket
                     <span className="block text-xs opacity-80 mt-0.5">Vedi sotto le esperienze disponibili</span>
                   </p>
                 </div>
@@ -672,10 +672,10 @@ const CityDetail = () => {
 
                 <>
                   <h3 className="text-2xl font-bold text-primary mb-2">
-                    2 Esperienze incluse nel ticket
+                    {cityDetail?.experiencesPerTicket || 2} Esperien{(cityDetail?.experiencesPerTicket || 2) === 1 ? 'za inclusa' : 'ze incluse'} nel ticket
                   </h3>
                   <p className="text-sm text-gray-600 italic mb-4">
-                    Potrai scegliere le esperienze che preferisci direttamente sul posto
+                    {(cityDetail?.experiencesPerTicket || 2) === 1 ? "L'esperienza disponibile" : 'Potrai scegliere le esperienze che preferisci direttamente sul posto'}
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                     {(cityDetail?.experiences && cityDetail.experiences.length > 0 ? cityDetail.experiences : defaultExperiences).map((exp, index) => (
