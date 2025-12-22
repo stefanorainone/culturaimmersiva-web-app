@@ -1,0 +1,24 @@
+{
+  "name": "Cultura Immersiva",
+  "short_name": "Cultura Immersiva",
+  "description": "Esperienze immersive in realtà virtuale",
+  "start_url": "/admin/whatsapp",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#c7925c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/images/icon-192-v2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-512-v2.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
