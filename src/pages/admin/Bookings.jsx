@@ -15,7 +15,7 @@ import {
   runTransaction,
   getDoc
 } from 'firebase/firestore';
-import { FaEdit, FaSignOutAlt, FaCalendarCheck, FaFilter, FaUsers, FaFileCsv, FaSearch, FaBell, FaExchangeAlt, FaClock, FaCalendar, FaArrowLeft, FaSms, FaBan } from 'react-icons/fa';
+import { FaEdit, FaSignOutAlt, FaCalendarCheck, FaFilter, FaUsers, FaFileCsv, FaSearch, FaBell, FaExchangeAlt, FaClock, FaCalendar, FaArrowLeft, FaSms, FaBan, FaWhatsapp, FaChartBar } from 'react-icons/fa';
 import Papa from 'papaparse';
 
 const Bookings = () => {
@@ -1013,6 +1013,13 @@ const Bookings = () => {
                       >
                         {city.name}
                         <button
+                          onClick={() => navigate(`/admin/city-dashboard/${cityId}`)}
+                          className="hover:text-secondary"
+                          title="Dashboard presenze"
+                        >
+                          <FaChartBar />
+                        </button>
+                        <button
                           onClick={() => removeCity(cityId)}
                           className="hover:text-primary-dark"
                         >
@@ -1230,19 +1237,28 @@ const Bookings = () => {
                             <span>{booking.reminders?.oneHourBefore?.sent ? '✅' : '⏳'}</span>
                             <span>1 ora</span>
                           </div>
+                          <div className={`flex items-center gap-1 ${booking.whatsappReminderSent ? 'text-green-600' : 'text-gray-400'}`}>
+                            <FaWhatsapp className={booking.whatsappReminderSent ? 'text-green-500' : ''} />
+                            <span>{booking.whatsappReminderSent ? '✅' : '⏳'}</span>
+                            <span>WA 24h</span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-xs">
-                        <div className="space-y-1">
-                          <div className={`flex items-center gap-1 ${booking.consents?.termsAndConditions?.accepted ? 'text-green-600' : 'text-gray-400'}`}>
-                            <span>{booking.consents?.termsAndConditions?.accepted ? '✅' : '❌'}</span>
-                            <span>T&C</span>
+                        {booking.consents ? (
+                          <div className="space-y-1">
+                            <div className={`flex items-center gap-1 ${booking.consents.termsAndConditions?.accepted ? 'text-green-600' : 'text-gray-400'}`}>
+                              <span>{booking.consents.termsAndConditions?.accepted ? '✅' : '❌'}</span>
+                              <span>T&C</span>
+                            </div>
+                            <div className={`flex items-center gap-1 ${booking.consents.marketing?.accepted ? 'text-green-600' : 'text-gray-400'}`}>
+                              <span>{booking.consents.marketing?.accepted ? '✅' : '❌'}</span>
+                              <span>Marketing</span>
+                            </div>
                           </div>
-                          <div className={`flex items-center gap-1 ${booking.consents?.marketing?.accepted ? 'text-green-600' : 'text-gray-400'}`}>
-                            <span>{booking.consents?.marketing?.accepted ? '✅' : '❌'}</span>
-                            <span>Marketing</span>
-                          </div>
-                        </div>
+                        ) : (
+                          <span className="text-gray-400">N/A</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {booking.status !== 'cancelled' ? (

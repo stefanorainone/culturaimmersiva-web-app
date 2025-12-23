@@ -10,7 +10,7 @@ import {
   orderBy,
   updateDoc
 } from 'firebase/firestore';
-import { FaPlus, FaEdit, FaSignOutAlt, FaCity, FaCalendarCheck, FaCopy, FaBell, FaBan } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaSignOutAlt, FaCity, FaCalendarCheck, FaCopy, FaBell, FaBan, FaWhatsapp, FaUsers, FaChartBar } from 'react-icons/fa';
 import CityModal from '../../components/admin/CityModal';
 
 const Dashboard = () => {
@@ -427,6 +427,22 @@ const Dashboard = () => {
                 <span className="hidden sm:inline">Reminder</span>
                 <span className="sm:hidden">Remind.</span>
               </button>
+              <button
+                onClick={() => navigate('/admin/whatsapp')}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors w-full sm:w-auto justify-center"
+              >
+                <FaWhatsapp />
+                <span className="hidden sm:inline">WhatsApp</span>
+                <span className="sm:hidden">WA</span>
+              </button>
+              <button
+                onClick={() => navigate('/admin/operators')}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors w-full sm:w-auto justify-center"
+              >
+                <FaUsers />
+                <span className="hidden sm:inline">Operatori</span>
+                <span className="sm:hidden">Op.</span>
+              </button>
               <span className="text-xs sm:text-sm text-gray-600 hidden md:inline">
                 {currentUser?.email}
               </span>
@@ -795,6 +811,16 @@ const Dashboard = () => {
                       })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/admin/city-dashboard/${city.id}`);
+                        }}
+                        className="text-secondary hover:text-secondary-light mr-4"
+                        title="Dashboard prenotazioni"
+                      >
+                        <FaChartBar className="inline" />
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

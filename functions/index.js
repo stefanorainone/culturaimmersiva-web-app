@@ -4439,7 +4439,7 @@ Cultura Immersiva`;
 
 /**
  * Automatic WhatsApp Reminders - runs every hour
- * Sends WhatsApp reminders 4 hours before events
+ * Sends WhatsApp reminders 24 hours before events
  */
 exports.sendWhatsAppAutoReminders = functions
   .region('europe-west1')
@@ -4458,9 +4458,9 @@ exports.sendWhatsAppAutoReminders = functions
       const db = admin.firestore();
       const now = new Date();
 
-      // Calculate time window: events happening in 3.5-4.5 hours (to account for hourly schedule)
-      const minTime = new Date(now.getTime() + 3.5 * 60 * 60 * 1000);
-      const maxTime = new Date(now.getTime() + 4.5 * 60 * 60 * 1000);
+      // Calculate time window: events happening in 23.5-24.5 hours (to account for hourly schedule)
+      const minTime = new Date(now.getTime() + 23.5 * 60 * 60 * 1000);
+      const maxTime = new Date(now.getTime() + 24.5 * 60 * 60 * 1000);
 
       console.log(`📅 Looking for events between ${minTime.toISOString()} and ${maxTime.toISOString()}`);
 
@@ -4632,3 +4632,118 @@ Cultura Immersiva
       return null;
     }
   });
+
+/**
+ * Create a city operator with Firebase Auth account
+ * Called from CityDashboard to add operators who can manage attendance
+ */
+exports.createCityOperator = functions.https.onCall(async (data, context) => {
+  // Verify caller is authenticated and is admin
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Autenticazione richiesta');
+  }
+
+  const db = admin.firestore();
+
+  // Check if caller is admin
+  const callerDoc = await db.collection('operators').doc(context.auth.uid).get();
+  const isAdmin = !callerDoc.exists || callerDoc.data()?.role === 'admin';
+
+  if (!isAdmin) {
+    throw new functions.https.HttpsError('permission-denied', 'Solo gli admin possono creare operatori');
+  }
+
+  const { email, password, name, cityId, cityName } = data;
+
+  if (!email || !password || !name || !cityId) {
+    throw new functions.https.HttpsError('invalid-argument', 'Email, password, nome e città sono obbligatori');
+  }
+
+  if (password.length < 6) {
+    throw new functions.https.HttpsError('invalid-argument', 'La password deve essere di almeno 6 caratteri');
+  }
+
+  try {
+    // Create Firebase Auth user
+    const userRecord = await admin.auth().createUser({
+      email: email,
+      password: password,
+      displayName: name
+    });
+
+    // Create operator document in Firestore
+    await db.collection('operators').doc(userRecord.uid).set({
+      email: email,
+      name: name,
+      role: 'city_operator',
+      assignedCityId: cityId,
+      assignedCityName: cityName || cityId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdBy: context.auth.token.email || context.auth.uid
+    });
+
+    console.log(`✅ City operator created: ${email} for city ${cityId}`);
+
+    return {
+      success: true,
+      uid: userRecord.uid,
+      message: `Operatore ${name} creato con successo`
+    };
+
+  } catch (error) {
+    console.error('Error creating city operator:', error);
+
+    if (error.code === 'auth/email-already-exists') {
+      throw new functions.https.HttpsError('already-exists', 'Questa email è già registrata');
+    }
+    if (error.code === 'auth/invalid-email') {
+      throw new functions.https.HttpsError('invalid-argument', 'Email non valida');
+    }
+    if (error.code === 'auth/weak-password') {
+      throw new functions.https.HttpsError('invalid-argument', 'Password troppo debole');
+    }
+
+    throw new functions.https.HttpsError('internal', 'Errore nella creazione dell\'operatore: ' + error.message);
+  }
+});
+
+/**
+ * Delete a city operator
+ */
+exports.deleteCityOperator = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Autenticazione richiesta');
+  }
+
+  const db = admin.firestore();
+
+  // Check if caller is admin
+  const callerDoc = await db.collection('operators').doc(context.auth.uid).get();
+  const isAdmin = !callerDoc.exists || callerDoc.data()?.role === 'admin';
+
+  if (!isAdmin) {
+    throw new functions.https.HttpsError('permission-denied', 'Solo gli admin possono eliminare operatori');
+  }
+
+  const { operatorId } = data;
+
+  if (!operatorId) {
+    throw new functions.https.HttpsError('invalid-argument', 'ID operatore richiesto');
+  }
+
+  try {
+    // Delete Firebase Auth user
+    await admin.auth().deleteUser(operatorId);
+
+    // Delete operator document
+    await db.collection('operators').doc(operatorId).delete();
+
+    console.log(`✅ City operator deleted: ${operatorId}`);
+
+    return { success: true };
+
+  } catch (error) {
+    console.error('Error deleting city operator:', error);
+    throw new functions.https.HttpsError('internal', 'Errore nell\'eliminazione: ' + error.message);
+  }
+});

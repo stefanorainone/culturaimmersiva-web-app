@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { FaLock, FaEnvelope } from 'react-icons/fa';
 import { logger } from '../../utils/logger';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,10 +20,24 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
+      const userCredential = await login(email, password);
 
       // Log successful login (without sensitive data)
       logger.log(`✅ Login successful at ${new Date().toISOString()}`);
+
+      // Check if user is a city operator and redirect to their dashboard
+      const operatorDoc = await getDoc(doc(db, 'operators', userCredential.user.uid));
+      if (operatorDoc.exists()) {
+        const operatorData = operatorDoc.data();
+        if (operatorData.role === 'city_operator' && operatorData.assignedCityId) {
+          navigate(`/admin/city-dashboard/${operatorData.assignedCityId}`);
+          return;
+        }
+        if (operatorData.role === 'whatsapp_operator') {
+          navigate('/admin/whatsapp');
+          return;
+        }
+      }
 
       navigate('/admin/dashboard');
     } catch (error) {
