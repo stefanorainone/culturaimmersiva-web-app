@@ -1509,7 +1509,7 @@ exports.sendAutomaticReminders = functions
       const settingsDoc = await db.collection('settings').doc('reminders').get();
       let settings;
 
-      if (settingsDoc.exists()) {
+      if (settingsDoc.exists) {
         settings = settingsDoc.data();
         console.log('✅ Loaded reminder settings from Firestore');
       } else {
@@ -1714,7 +1714,7 @@ exports.sendManualReminders = functions
       // Load reminder settings from Firestore
       const settingsDoc = await db.collection('settings').doc('reminders').get();
       let settings = null;
-      if (settingsDoc.exists()) {
+      if (settingsDoc.exists) {
         settings = settingsDoc.data();
         console.log('✅ Loaded reminder settings for manual send');
       }
