@@ -15,7 +15,7 @@ import {
   addDoc,
   serverTimestamp
 } from 'firebase/firestore';
-import { FaWhatsapp, FaPaperPlane, FaArrowLeft, FaSync, FaUser, FaSearch, FaUserCog, FaBell, FaBellSlash, FaFileAlt, FaPlay, FaDownload, FaTimes, FaExpand, FaCheck } from 'react-icons/fa';
+import { FaWhatsapp, FaPaperPlane, FaArrowLeft, FaSync, FaUser, FaSearch, FaUserCog, FaBell, FaBellSlash, FaFileAlt, FaPlay, FaDownload, FaTimes, FaExpand, FaCheck, FaCity } from 'react-icons/fa';
 
 // Compact WhatsApp-style checkmarks
 const CheckIcon = ({ className }) => (
@@ -147,6 +147,7 @@ const WhatsApp = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [operatorName, setOperatorName] = useState('');
+  const [userRole, setUserRole] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState(null);
@@ -229,9 +230,12 @@ const WhatsApp = () => {
       try {
         const operatorDoc = await getDoc(doc(db, 'operators', currentUser.uid));
         if (operatorDoc.exists()) {
-          setOperatorName(operatorDoc.data().name || currentUser.email);
+          const data = operatorDoc.data();
+          setOperatorName(data.name || currentUser.email);
+          setUserRole(data.role || 'admin');
         } else {
           setOperatorName(currentUser.email?.split('@')[0] || 'Operatore');
+          setUserRole('admin');
         }
       } catch {
         setOperatorName(currentUser.email?.split('@')[0] || 'Operatore');
@@ -480,11 +484,11 @@ const WhatsApp = () => {
         </div>
 
         <div className="flex items-center gap-1">
-          {/* Mark as done button in header - mobile only */}
+          {/* Mark as done button in header */}
           {selectedConversation?.needsReply && (
             <button
               onClick={handleMarkAsDone}
-              className="sm:hidden p-2.5 hover:bg-white/10 rounded-full active:bg-white/20 text-green-300"
+              className="p-2.5 hover:bg-white/10 rounded-full active:bg-white/20 text-green-300"
               title="Segna come gestito"
             >
               <FaCheck size={18} />
@@ -500,6 +504,17 @@ const WhatsApp = () => {
               title="Attiva notifiche"
             >
               {notificationLoading ? <FaSync className="animate-spin" size={18} /> : <FaBellSlash size={18} />}
+            </button>
+          )}
+
+          {/* City dashboards button - for supervisor and admin */}
+          {(userRole === 'supervisor' || userRole === 'admin') && (
+            <button
+              onClick={() => navigate('/admin/city-selector')}
+              className="p-2.5 rounded-full hover:bg-white/10"
+              title="Dashboard prenotazioni"
+            >
+              <FaCity size={18} />
             </button>
           )}
 

@@ -5,6 +5,7 @@ import ScrollToTop from './components/ScrollToTop';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
+import PWAUpdatePrompt from './components/PWAUpdatePrompt';
 import Home from './pages/Home';
 import Cities from './pages/Cities';
 import CityDetail from './pages/CityDetail';
@@ -32,6 +33,12 @@ import AdminWhatsApp from './pages/admin/WhatsApp';
 import AdminOperators from './pages/admin/Operators';
 import CityForm from './pages/admin/CityForm';
 import CityDashboard from './pages/admin/CityDashboard';
+import CitySelector from './pages/admin/CitySelector';
+import Feedback from './pages/Feedback';
+import Review from './pages/Review';
+import LavoraConNoi from './pages/LavoraConNoi';
+import AdminNoShowFeedback from './pages/admin/NoShowFeedback';
+import AdminReviews from './pages/admin/Reviews';
 
 // Redirect component for /news/:slug to /blog/:slug
 const NewsSlugRedirect = () => {
@@ -41,9 +48,11 @@ const NewsSlugRedirect = () => {
 
 function App() {
   return (
-    <Router>
-      <ScrollToTop />
-      <AuthProvider>
+    <>
+      <PWAUpdatePrompt />
+      <Router>
+        <ScrollToTop />
+        <AuthProvider>
         <Routes>
           {/* Public Routes with Header/Footer */}
           <Route path="/*" element={
@@ -63,6 +72,7 @@ function App() {
                   <Route path="/hotel" element={<Hotels />} />
                   <Route path="/contatti" element={<Contact />} />
                   <Route path="/collabora" element={<Collabora />} />
+                  <Route path="/lavora-con-noi" element={<LavoraConNoi />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/termini-condizioni" element={<TermsConditions />} />
                   <Route path="/blog" element={<Blog />} />
@@ -80,6 +90,12 @@ function App() {
           {/* Ticket Page without Header/Footer */}
           <Route path="/ticket" element={<Ticket />} />
 
+          {/* Feedback Page without Header/Footer */}
+          <Route path="/feedback/:bookingId/:response" element={<Feedback />} />
+
+          {/* Review Page without Header/Footer */}
+          <Route path="/review" element={<Review />} />
+
           {/* Admin Routes without Header/Footer */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={
@@ -88,7 +104,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/bookings" element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'supervisor']}>
               <AdminBookings />
             </ProtectedRoute>
           } />
@@ -108,7 +124,7 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/whatsapp" element={
-            <ProtectedRoute allowedRoles={['admin', 'whatsapp_operator']}>
+            <ProtectedRoute allowedRoles={['admin', 'whatsapp_operator', 'supervisor']}>
               <AdminWhatsApp />
             </ProtectedRoute>
           } />
@@ -123,13 +139,29 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/admin/city-dashboard/:cityId" element={
-            <ProtectedRoute allowedRoles={['admin', 'operator', 'city_operator']}>
+            <ProtectedRoute allowedRoles={['admin', 'operator', 'city_operator', 'supervisor']}>
               <CityDashboard />
             </ProtectedRoute>
           } />
+          <Route path="/admin/city-selector" element={
+            <ProtectedRoute allowedRoles={['admin', 'operator', 'city_operator', 'supervisor']}>
+              <CitySelector />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/noshow-feedback" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminNoShowFeedback />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/reviews" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminReviews />
+            </ProtectedRoute>
+          } />
         </Routes>
-      </AuthProvider>
-    </Router>
+        </AuthProvider>
+      </Router>
+    </>
   );
 }
 

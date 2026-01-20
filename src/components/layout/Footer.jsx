@@ -43,6 +43,11 @@ const Footer = () => {
                   Hotel / B&B
                 </Link>
               </li>
+              <li>
+                <Link to="/lavora-con-noi" className="text-gray-300 hover:text-secondary transition-colors text-sm">
+                  Lavora con Noi
+                </Link>
+              </li>
             </ul>
           </div>
 

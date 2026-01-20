@@ -303,7 +303,7 @@ exports.sendBookingConfirmation = functions.https.onCall(async (data, context) =
     sgMail.setApiKey(SENDGRID_KEY);
 
     // Get base URL - use production URL
-    const baseUrl = 'https://culturaimmersiva-it.web.app';
+    const baseUrl = 'https://culturaimmersiva.it';
     const editUrl = `${baseUrl}/booking-manage/${token}`;
     const cancelUrl = `${baseUrl}/booking-cancel/${token}`;
 
@@ -510,7 +510,7 @@ exports.sendBookingConfirmation = functions.https.onCall(async (data, context) =
       </div>
 
       <p style="font-size: 14px; color: #6c757d; margin-top: 30px;">
-        Hai domande? Contattaci su <a href="https://www.culturaimmersiva.it/contatti" style="color: #667eea; text-decoration: none;">culturaimmersiva.it/contatti</a>
+        Hai domande? Contattaci su <a href="https://culturaimmersiva.it/contatti" style="color: #667eea; text-decoration: none;">culturaimmersiva.it/contatti</a>
       </p>
     </div>
 
@@ -520,7 +520,7 @@ exports.sendBookingConfirmation = functions.https.onCall(async (data, context) =
         Esperienze culturali in realtà virtuale
       </p>
       <p style="margin: 5px 0;">
-        <a href="https://www.culturaimmersiva.it">www.culturaimmersiva.it</a>
+        <a href="https://culturaimmersiva.it">www.culturaimmersiva.it</a>
       </p>
       <p style="margin: 15px 0 5px 0; font-size: 11px; color: #999;">
         Questa email è stata inviata automaticamente. Per favore non rispondere a questa email.
@@ -540,7 +540,13 @@ exports.sendBookingConfirmation = functions.https.onCall(async (data, context) =
       },
       subject: `✅ Conferma Prenotazione - ${safeCityName}`,
       html: emailHtml,
-      text: `Conferma Prenotazione\n\nCiao ${safeName},\n\nLa tua prenotazione è stata confermata!\n\nEvento: ${safeCityName}\nData: ${booking.date ? formatDate(booking.date) : ''}\nOrario: ${sanitizeHtml(booking.time)}${safeLocationName ? `\nLuogo: ${safeLocationName}${safeLocationAddress ? ` - ${safeLocationAddress}` : ''}` : ''}\nPosti: ${booking.spots}\n\nPer modificare la prenotazione: ${editUrl}\nPer annullare la prenotazione: ${cancelUrl}\n\nGrazie per aver scelto Cultura Immersiva!`
+      text: `Conferma Prenotazione\n\nCiao ${safeName},\n\nLa tua prenotazione è stata confermata!\n\nEvento: ${safeCityName}\nData: ${booking.date ? formatDate(booking.date) : ''}\nOrario: ${sanitizeHtml(booking.time)}${safeLocationName ? `\nLuogo: ${safeLocationName}${safeLocationAddress ? ` - ${safeLocationAddress}` : ''}` : ''}\nPosti: ${booking.spots}\n\nPer modificare la prenotazione: ${editUrl}\nPer annullare la prenotazione: ${cancelUrl}\n\nGrazie per aver scelto Cultura Immersiva!`,
+      trackingSettings: {
+        clickTracking: {
+          enable: false,
+          enableText: false
+        }
+      }
     };
 
     // Send email via SendGrid
@@ -767,11 +773,11 @@ exports.sendAdminCancellation = functions.https.onCall(async (data, context) => 
       </p>
 
       <div class="button-container">
-        <a href="https://culturaimmersiva-it.web.app/citta" class="button">🔍 Scopri altri eventi</a>
+        <a href="https://culturaimmersiva.it/citta" class="button">🔍 Scopri altri eventi</a>
       </div>
 
       <p style="font-size: 14px; color: #6c757d; margin-top: 30px;">
-        Ci scusiamo per l'inconveniente. Per qualsiasi domanda, contattaci su <a href="https://www.culturaimmersiva.it/contatti" style="color: #667eea; text-decoration: none;">culturaimmersiva.it/contatti</a>
+        Ci scusiamo per l'inconveniente. Per qualsiasi domanda, contattaci su <a href="https://culturaimmersiva.it/contatti" style="color: #667eea; text-decoration: none;">culturaimmersiva.it/contatti</a>
       </p>
     </div>
 
@@ -781,7 +787,7 @@ exports.sendAdminCancellation = functions.https.onCall(async (data, context) => 
         Esperienze culturali in realtà virtuale
       </p>
       <p style="margin: 5px 0;">
-        <a href="https://www.culturaimmersiva.it">www.culturaimmersiva.it</a>
+        <a href="https://culturaimmersiva.it">www.culturaimmersiva.it</a>
       </p>
       <p style="margin: 15px 0 5px 0; font-size: 11px; color: #999;">
         Questa email è stata inviata automaticamente. Per favore non rispondere a questa email.
@@ -801,7 +807,13 @@ exports.sendAdminCancellation = functions.https.onCall(async (data, context) => 
       },
       subject: `❌ Prenotazione Annullata - ${safeCityName}`,
       html: emailHtml,
-      text: `Prenotazione Annullata\n\nGentile ${safeName},\n\nSiamo spiacenti di informarti che la tua prenotazione è stata annullata dall'organizzatore.\n\n${safeReason ? `Motivazione: ${safeReason}\n\n` : ''}Dettagli della prenotazione annullata:\nEvento: ${safeCityName}\nData: ${booking.date ? formatDate(booking.date) : ''}\nOrario: ${sanitizeHtml(booking.time)}${safeLocationName ? `\nLuogo: ${safeLocationName}${safeLocationAddress ? ` - ${safeLocationAddress}` : ''}` : ''}\nPosti: ${booking.spots}\n\nCi scusiamo per l'inconveniente.\n\nPer scoprire altri eventi: https://culturaimmersiva-it.web.app/citta\n\nGrazie,\nCultura Immersiva`
+      text: `Prenotazione Annullata\n\nGentile ${safeName},\n\nSiamo spiacenti di informarti che la tua prenotazione è stata annullata dall'organizzatore.\n\n${safeReason ? `Motivazione: ${safeReason}\n\n` : ''}Dettagli della prenotazione annullata:\nEvento: ${safeCityName}\nData: ${booking.date ? formatDate(booking.date) : ''}\nOrario: ${sanitizeHtml(booking.time)}${safeLocationName ? `\nLuogo: ${safeLocationName}${safeLocationAddress ? ` - ${safeLocationAddress}` : ''}` : ''}\nPosti: ${booking.spots}\n\nCi scusiamo per l'inconveniente.\n\nPer scoprire altri eventi: https://culturaimmersiva.it/citta\n\nGrazie,\nCultura Immersiva`,
+      trackingSettings: {
+        clickTracking: {
+          enable: false,
+          enableText: false
+        }
+      }
     };
 
     // Send email via SendGrid
@@ -1048,7 +1060,7 @@ exports.cancelBookingByUser = functions.https.onCall(async (data, context) => {
     // Decrement bookedSlots on city document
     if (booking.cityId && booking.date && booking.time && booking.spots) {
       const cityRef = db.collection('cities').doc(booking.cityId);
-      const slotKey = `${booking.date}_${booking.time}`;
+      const slotKey = `${booking.date}-${booking.time}`;  // Use dash, not underscore
 
       await cityRef.update({
         [`bookedSlots.${slotKey}`]: admin.firestore.FieldValue.increment(-booking.spots)
@@ -1074,13 +1086,13 @@ exports.cancelBookingByUser = functions.https.onCall(async (data, context) => {
 /**
  * Scheduled Function: Update City Availability
  *
- * Runs every Sunday at 22:00 (Europe/Rome timezone)
+ * Runs every day at 06:00 (Europe/Rome timezone)
  * Checks all cities for future available dates and updates their status automatically
  */
 exports.updateCityAvailability = functions
   .region('europe-west1')
   .pubsub
-  .schedule('0 22 * * 0') // Every Sunday at 22:00
+  .schedule('0 6 * * *') // Every day at 06:00
   .timeZone('Europe/Rome')
   .onRun(async (context) => {
     try {
@@ -1173,7 +1185,7 @@ function replaceTemplateVariables(template, booking) {
  * @param {number} hoursRemaining - Actual hours remaining until event (optional)
  */
 function generateReminderEmail(booking, reminderType, templateSettings = null, hoursRemaining = null) {
-  const baseUrl = 'https://culturaimmersiva-it.web.app';
+  const baseUrl = 'https://culturaimmersiva.it';
   const editUrl = `${baseUrl}/booking-manage/${booking.token}`;
   const cancelUrl = `${baseUrl}/booking-cancel/${booking.token}`;
 
@@ -1568,10 +1580,11 @@ exports.sendAutomaticReminders = functions
         const reminders = booking.reminders || {};
 
         // 3 days before reminder
+        // Only send if more than 24 hours away (so they can still receive 1-day reminder separately)
         const threeDayConfig = settings.timing.threeDaysBefore;
         if (threeDayConfig.enabled &&
             hoursUntilEvent <= threeDayConfig.hoursBeforeEvent &&
-            hoursUntilEvent > 0 &&
+            hoursUntilEvent > 24 &&
             !reminders.threeDaysBefore?.sent) {
           try {
             const template = settings.templates?.threeDaysBefore || null;
@@ -1582,7 +1595,10 @@ exports.sendAutomaticReminders = functions
               from: 'noreply@culturaimmersiva.it',
               subject: emailTemplate.subject,
               text: emailTemplate.text,
-              html: emailTemplate.html
+              html: emailTemplate.html,
+              trackingSettings: {
+                clickTracking: { enable: false, enableText: false }
+              }
             });
 
             await db.collection('bookings').doc(bookingId).update({
@@ -1603,10 +1619,11 @@ exports.sendAutomaticReminders = functions
         }
 
         // 1 day before reminder
+        // Only send if more than 1 hour away (so they can still receive 1-hour reminder separately)
         const oneDayConfig = settings.timing.oneDayBefore;
         if (oneDayConfig.enabled &&
             hoursUntilEvent <= oneDayConfig.hoursBeforeEvent &&
-            hoursUntilEvent > 0 &&
+            hoursUntilEvent > 1 &&
             !reminders.oneDayBefore?.sent) {
           try {
             const template = settings.templates?.oneDayBefore || null;
@@ -1616,7 +1633,10 @@ exports.sendAutomaticReminders = functions
               from: 'noreply@culturaimmersiva.it',
               subject: emailTemplate.subject,
               text: emailTemplate.text,
-              html: emailTemplate.html
+              html: emailTemplate.html,
+              trackingSettings: {
+                clickTracking: { enable: false, enableText: false }
+              }
             });
 
             await db.collection('bookings').doc(bookingId).update({
@@ -1637,10 +1657,15 @@ exports.sendAutomaticReminders = functions
         }
 
         // 1 hour before reminder
+        // Skip if booking was created less than 1 hour ago (they just got confirmation)
         const oneHourConfig = settings.timing.oneHourBefore;
+        const createdAt = booking.createdAt?._seconds ? new Date(booking.createdAt._seconds * 1000) : null;
+        const hoursSinceBooking = createdAt ? (now - createdAt) / (1000 * 60 * 60) : Infinity;
+
         if (oneHourConfig.enabled &&
             hoursUntilEvent <= oneHourConfig.hoursBeforeEvent &&
             hoursUntilEvent > 0 &&
+            hoursSinceBooking >= 1 &&
             !reminders.oneHourBefore?.sent) {
           try {
             const template = settings.templates?.oneHourBefore || null;
@@ -1650,7 +1675,10 @@ exports.sendAutomaticReminders = functions
               from: 'noreply@culturaimmersiva.it',
               subject: emailTemplate.subject,
               text: emailTemplate.text,
-              html: emailTemplate.html
+              html: emailTemplate.html,
+              trackingSettings: {
+                clickTracking: { enable: false, enableText: false }
+              }
             });
 
             await db.collection('bookings').doc(bookingId).update({
@@ -1676,6 +1704,206 @@ exports.sendAutomaticReminders = functions
 
     } catch (error) {
       console.error('❌ Error in sendAutomaticReminders:', error);
+      return null;
+    }
+  });
+
+/**
+ * Generate review email HTML
+ */
+function generateReviewEmailHtml(booking, bookingId) {
+  const BASE_URL = 'https://culturaimmersiva.it';
+  const reviewUrl = (rating) => `${BASE_URL}/review?booking=${bookingId}&rating=${rating}`;
+  const TRUSTPILOT_URL = 'https://it.trustpilot.com/review/www.culturaimmersiva.it';
+
+  return `
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Com'è andata?</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 20px auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px 20px; text-align: center; }
+    .stars-table { margin: 25px auto; }
+    .star-cell { padding: 8px 12px; text-align: center; }
+    .star-link { text-decoration: none; font-size: 32px; }
+    .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; }
+    .footer a { color: #667eea; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Com'è andata?</h1>
+    </div>
+
+    <div class="content">
+      <p>Grazie per aver partecipato!</p>
+      <p style="margin-bottom: 5px;">Com'è andata l'esperienza?</p>
+
+      <table class="stars-table" cellpadding="0" cellspacing="0">
+        <tr>
+          <td class="star-cell"><a href="${reviewUrl(1)}" class="star-link">⭐</a></td>
+          <td class="star-cell"><a href="${reviewUrl(2)}" class="star-link">⭐</a></td>
+          <td class="star-cell"><a href="${reviewUrl(3)}" class="star-link">⭐</a></td>
+          <td class="star-cell"><a href="${reviewUrl(4)}" class="star-link">⭐</a></td>
+          <td class="star-cell"><a href="${TRUSTPILOT_URL}" class="star-link">⭐</a></td>
+        </tr>
+      </table>
+
+      <p style="margin-top: 15px;">
+        <a href="${reviewUrl(1)}" style="color: #dc3545; text-decoration: underline; margin: 0 15px;">Pessima</a>
+        <a href="${reviewUrl(3)}" style="color: #2563eb; text-decoration: underline; margin: 0 15px;">Normale</a>
+        <a href="${TRUSTPILOT_URL}" style="color: #28a745; text-decoration: underline; margin: 0 15px;">Meravigliosa</a>
+      </p>
+    </div>
+
+    <div class="footer">
+      <p><strong>Cultura Immersiva</strong></p>
+      <p>Esperienze culturali in realtà virtuale</p>
+      <p><a href="${BASE_URL}">www.culturaimmersiva.it</a></p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Scheduled Function: Send Review Emails
+ * Runs every 30 minutes to send review requests 1 hour after the event
+ * to participants who have been marked as present (attendance.confirmed)
+ */
+exports.sendAutomaticReviewEmails = functions
+  .region('europe-west1')
+  .pubsub
+  .schedule('every 30 minutes')
+  .timeZone('Europe/Rome')
+  .onRun(async (context) => {
+    console.log('⏰ Starting automatic review emails check...');
+
+    if (!SENDGRID_KEY) {
+      console.error('❌ SendGrid API key not configured');
+      return null;
+    }
+
+    sgMail.setApiKey(SENDGRID_KEY);
+
+    try {
+      const db = admin.firestore();
+      const now = new Date();
+
+      // Get all confirmed bookings with attendance confirmed
+      const bookingsSnapshot = await db.collection('bookings')
+        .where('status', '==', 'confirmed')
+        .where('attendance.confirmed', '==', true)
+        .get();
+
+      let sentCount = 0;
+      let skippedCount = 0;
+      let errorCount = 0;
+
+      // Group by email to avoid sending duplicates
+      const emailGroups = new Map();
+
+      for (const bookingDoc of bookingsSnapshot.docs) {
+        const booking = bookingDoc.data();
+        const bookingId = bookingDoc.id;
+
+        // Skip if review email already sent
+        if (booking.reviewEmailSent) {
+          continue;
+        }
+
+        // Skip if no email
+        if (!booking.email) {
+          console.log(`⚠️  Skipping booking ${bookingId}: missing email`);
+          continue;
+        }
+
+        // Check when attendance was confirmed
+        const confirmedAt = booking.attendance?.confirmedAt;
+        if (!confirmedAt) {
+          console.log(`⚠️  Skipping booking ${bookingId}: no confirmedAt timestamp`);
+          continue;
+        }
+
+        // Convert Firestore timestamp to Date
+        const confirmedDate = confirmedAt._seconds
+          ? new Date(confirmedAt._seconds * 1000)
+          : new Date(confirmedAt);
+
+        // Calculate hours since marked as present
+        const hoursSinceConfirmed = (now - confirmedDate) / (1000 * 60 * 60);
+
+        // Send email if at least 1 hour has passed since marked as present
+        if (hoursSinceConfirmed >= 1) {
+          // Group by email - use the most recent booking
+          const email = booking.email.toLowerCase();
+          if (!emailGroups.has(email) || new Date(booking.date) > new Date(emailGroups.get(email).date)) {
+            emailGroups.set(email, { ...booking, id: bookingId });
+          }
+        }
+      }
+
+      console.log(`📧 Found ${emailGroups.size} unique emails to send review requests`);
+
+      // Send emails
+      for (const [email, booking] of emailGroups) {
+        try {
+          const safeCityName = (booking.cityName || 'la tua esperienza').replace(/[<>]/g, '');
+          const safeName = (booking.name || 'Partecipante').replace(/[<>]/g, '');
+
+          await sgMail.send({
+            to: email,
+            from: {
+              email: 'info@culturaimmersiva.it',
+              name: 'Cultura Immersiva'
+            },
+            subject: `Com'è andata l'esperienza a ${safeCityName}?`,
+            html: generateReviewEmailHtml(booking, booking.id),
+            text: `Ciao ${safeName}, grazie per aver partecipato a ${safeCityName}! Come valuteresti la tua esperienza? Visita https://culturaimmersiva.it/review?booking=${booking.id}&rating=5 per lasciare una recensione.`,
+            trackingSettings: {
+              clickTracking: { enable: false, enableText: false }
+            }
+          });
+
+          // Mark all bookings with this email as reviewEmailSent
+          const allBookingsForEmail = await db.collection('bookings')
+            .where('email', '==', email)
+            .where('attendance.confirmed', '==', true)
+            .get();
+
+          const batch = db.batch();
+          allBookingsForEmail.forEach(doc => {
+            batch.update(doc.ref, {
+              reviewEmailSent: true,
+              reviewEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+          });
+          await batch.commit();
+
+          console.log(`✅ Sent review email to: ${email} (${safeName})`);
+          sentCount++;
+
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error(`❌ Error sending review email to ${email}:`, error.message);
+          errorCount++;
+        }
+      }
+
+      console.log(`✅ Review email check complete. Sent: ${sentCount}, Errors: ${errorCount}`);
+      return { sent: sentCount, errors: errorCount };
+
+    } catch (error) {
+      console.error('❌ Error in sendAutomaticReviewEmails:', error);
       return null;
     }
   });
@@ -1775,7 +2003,10 @@ exports.sendManualReminders = functions
             from: 'noreply@culturaimmersiva.it',
             subject: emailTemplate.subject,
             text: emailTemplate.text,
-            html: emailTemplate.html
+            html: emailTemplate.html,
+            trackingSettings: {
+              clickTracking: { enable: false, enableText: false }
+            }
           });
 
           console.log(`✅ Sent manual reminder to ${booking.email} for booking ${bookingId}`);
@@ -2344,7 +2575,10 @@ exports.sendCustomReminder = functions
             from: 'noreply@culturaimmersiva.it',
             subject: finalSubject,
             text: finalMessage.replace(/<[^>]*>/g, ''), // Strip HTML for text version
-            html: htmlContent
+            html: htmlContent,
+            trackingSettings: {
+              clickTracking: { enable: false, enableText: false }
+            }
           });
 
           // Save to history
@@ -2855,20 +3089,14 @@ exports.sendWhatsAppBroadcast = functions.https.onRequest(async (req, res) => {
  */
 const AI_SYSTEM_PROMPT = `Sei l'assistente virtuale di Cultura Immersiva, un'azienda che organizza esperienze di realtà virtuale in diverse città italiane.
 
-INFORMAZIONI GENERALI:
-- Offriamo tour virtuali ed esperienze immersive in varie città italiane
-- Le esperienze durano circa 30-45 minuti
-- Si può prenotare online o via WhatsApp
-- Pagamento sul posto (contanti o carta)
-
 IL TUO RUOLO:
 - Rispondi in italiano, in modo cordiale e professionale
-- Aiuta i clienti con informazioni su eventi, prenotazioni, cancellazioni
+- Aiuta i clienti SOLO con informazioni che HAI CERTAMENTE (dalle prenotazioni nel contesto o dagli strumenti)
 - Puoi cercare, modificare e cancellare prenotazioni
 
 STILE DI COMUNICAZIONE - MOLTO IMPORTANTE:
 1. Dai sempre del LEI, mai del "tu" (es: "La ringrazio", "Le auguro", "Può contattarci")
-2. NON fare domande all'utente - rispondi solo a ciò che chiede
+2. NON fare domande all'utente - HAI GIÀ TUTTI I DATI nel contesto
 3. Sii gentile e cordiale
 4. Alla fine di ogni risposta:
    - Augura una buona esperienza immersiva
@@ -2895,11 +3123,27 @@ EVITA RIPETIZIONI:
 - NON dare informazioni già comunicate
 - Se hai già augurato buona esperienza, non farlo di nuovo
 
-REGOLA FONDAMENTALE - MAI INVENTARE:
+REGOLA FONDAMENTALE - MAI INVENTARE (CRITICO!!!):
 - NON inventare MAI informazioni che non hai
-- NON supporre prezzi, date, orari o dettagli
-- Se non hai un'informazione certa, ESCALA all'operatore
-- Meglio passare a un umano che dare informazioni sbagliate
+- NON supporre prezzi, date, orari, durate o altri dettagli
+- Puoi rispondere SOLO con dati che:
+  1. Sono nel CONTESTO UTENTE (prenotazioni)
+  2. Ottieni dagli STRUMENTI (get_city_info, search_bookings, ecc.)
+- Se non hai l'informazione dagli strumenti o dal contesto: [ESCALATED] e basta
+- VIETATO inventare, supporre, dedurre o "essere d'aiuto" con info false
+
+DIVIETI ASSOLUTI - MAI FARE QUESTE COSE:
+- MAI dare numeri di telefono (non ne abbiamo!)
+- MAI dire "chiami il numero...", "contatti il numero verde...", ecc.
+- MAI inventare contatti, email, numeri che non conosci
+- MAI suggerire di chiamare qualcuno
+- Se il cliente ha bisogno di assistenza telefonica: [ESCALATED] (un operatore risponderà via WhatsApp)
+
+COME OTTENERE INFORMAZIONI SUGLI EVENTI:
+- Per prezzi, date, orari, durata, location: USA SEMPRE lo strumento get_city_info
+- Lo strumento restituisce: pricing, dates, duration, location, address
+- PRIMA cerca le info con lo strumento, POI rispondi
+- Se lo strumento non restituisce l'info richiesta: [ESCALATED]
 
 REGOLA ESCALATION - QUANDO PASSARE ALL'OPERATORE:
 Passa SEMPRE all'operatore umano quando:
@@ -2928,15 +3172,46 @@ ESEMPIO CORRETTO:
 
 Solo quello, nient'altro.
 
-ALTRE REGOLE:
-1. Non inventare informazioni - usa gli strumenti per verificare
-2. Per modifiche/cancellazioni: HAI GIÀ TUTTI I DATI nel contesto utente (nome, email, città, data, ora, ID prenotazione). NON chiedere nulla all'utente, procedi direttamente con l'operazione.
+REGOLA CRITICA - NON CHIEDERE MAI DETTAGLI PRENOTAZIONE:
+- HAI GIÀ TUTTI I DATI nel contesto utente (nome, email, città, data, ora, ID prenotazione)
+- NON chiedere MAI: "per quale prenotazione?", "quale data?", "quale città?", "mi può confermare...?"
+- L'utente ha già ricevuto email/WhatsApp con tutti i dettagli, quindi quando scrive SA di cosa parla
+- Se ha più prenotazioni, controlla quale è la prossima in ordine cronologico
+- Procedi DIRETTAMENTE con l'operazione usando i dati che hai
+- MAI fare domande di conferma sui dati - li HAI già!
 
 IMPORTANTE - CONTESTO PRENOTAZIONI:
 - Quando un utente scrive, ricevi automaticamente le sue prenotazioni nel contesto
-- Usa questi dati per rispondere senza chiedere conferme
+- Usa questi dati per rispondere SENZA chiedere conferme
 - Se l'utente chiede di cancellare/modificare, usa l'ID prenotazione dal contesto
-- L'utente ha già ricevuto email/WhatsApp di conferma con tutti i dettagli, quindi sa di cosa parla`;
+- NON dire "non ho trovato prenotazioni" se le vedi nel contesto!
+
+REGOLA CRITICA - CANCELLAZIONI:
+Cancella una prenotazione SOLO quando l'utente lo richiede in modo ESPLICITO e INEQUIVOCABILE.
+
+Frasi che RICHIEDONO cancellazione (procedi):
+- "voglio cancellare la prenotazione"
+- "devo disdire"
+- "cancella la mia prenotazione"
+- "non posso più venire, cancella"
+- "annulla tutto"
+- "disdici la prenotazione"
+
+Frasi che NON significano cancellazione (NON cancellare, chiedi chiarimenti):
+- "sono fuori" (potrebbe essere fuori ad aspettare, fuori città, ecc.)
+- "non ci sono" (potrebbe riferirsi a un momento specifico)
+- "non riesco" (potrebbe essere un problema tecnico)
+- "non posso" (senza specificare cosa)
+- "ho un problema" (potrebbe essere qualsiasi cosa)
+- "sono via"
+- "sono impegnato"
+
+Se il messaggio è AMBIGUO riguardo alla cancellazione:
+1. NON procedere con la cancellazione
+2. Chiedi conferma esplicita: "Mi scusi, desidera cancellare la Sua prenotazione per [città] del [data]?"
+3. Procedi SOLO dopo conferma chiara dell'utente
+
+RICORDA: È meglio chiedere conferma una volta in più che cancellare per errore una prenotazione!`;
 
 /**
  * AI Tools Definition
@@ -2969,7 +3244,7 @@ const AI_TOOLS = [
   },
   {
     name: "cancel_booking",
-    description: "Cancella una prenotazione. Usa solo dopo aver verificato l'identità del cliente.",
+    description: "Cancella una prenotazione. ATTENZIONE: Usa SOLO quando l'utente richiede ESPLICITAMENTE la cancellazione con frasi chiare come 'voglio cancellare', 'disdici la prenotazione', 'annulla tutto'. NON usare per frasi ambigue come 'sono fuori', 'non ci sono', 'non posso'. In caso di dubbio, chiedi conferma PRIMA di usare questo strumento.",
     input_schema: {
       type: "object",
       properties: {
@@ -3544,8 +3819,37 @@ async function processWithAI(conversationId, phone, incomingMessage, conversatio
     // Build system prompt with user context
     let systemPrompt = settings.systemPrompt || AI_SYSTEM_PROMPT;
 
+    // Add current date/time so AI knows what "today", "tomorrow" means
+    const now = new Date();
+    const italyFormatter = new Intl.DateTimeFormat('it-IT', {
+      timeZone: 'Europe/Rome',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const todayParts = italyFormatter.formatToParts(now);
+    const todayDay = todayParts.find(p => p.type === 'day').value;
+    const todayMonth = todayParts.find(p => p.type === 'month').value;
+    const todayYear = todayParts.find(p => p.type === 'year').value;
+    const todayISO = `${todayYear}-${todayMonth}-${todayDay}`;
+
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowParts = italyFormatter.formatToParts(tomorrow);
+    const tomorrowISO = `${tomorrowParts.find(p => p.type === 'year').value}-${tomorrowParts.find(p => p.type === 'month').value}-${tomorrowParts.find(p => p.type === 'day').value}`;
+
+    const dayAfter = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+    const dayAfterParts = italyFormatter.formatToParts(dayAfter);
+    const dayAfterISO = `${dayAfterParts.find(p => p.type === 'year').value}-${dayAfterParts.find(p => p.type === 'month').value}-${dayAfterParts.find(p => p.type === 'day').value}`;
+
+    systemPrompt += `\n\n## DATA CORRENTE (IMPORTANTE)
+- OGGI: ${todayISO} (${todayDay}/${todayMonth}/${todayYear})
+- DOMANI: ${tomorrowISO} (${tomorrowParts.find(p => p.type === 'day').value}/${tomorrowParts.find(p => p.type === 'month').value}/${tomorrowParts.find(p => p.type === 'year').value})
+- DOPODOMANI: ${dayAfterISO}
+
+IMPORTANTE: Quando confronti date, usa il formato YYYY-MM-DD. Se una prenotazione ha data "${tomorrowISO}" significa che è DOMANI.\n`;
+
     if (userContext && (userContext.bookings?.length > 0 || userContext.events?.length > 0)) {
-      systemPrompt += `\n\n## CONTESTO UTENTE CORRENTE\n\nQuesto utente ha il numero ${phone}.\n`;
+      systemPrompt += `\n## CONTESTO UTENTE CORRENTE\n\nQuesto utente ha il numero ${phone}.\n`;
 
       if (userContext.bookings?.length > 0) {
         systemPrompt += `\n### PRENOTAZIONI DELL'UTENTE (usa questi dati, NON chiedere nulla):\n`;
@@ -4483,10 +4787,11 @@ exports.sendWhatsAppAutoReminders = functions
         if (!booking.whatsapp) continue;
 
         try {
-          // Date format is YYYY-MM-DD
-          const [year, month, day] = booking.date.split('-');
-          const [hours, minutes] = booking.time.split(':');
-          const eventDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(minutes));
+          // Date format is YYYY-MM-DD, time is in Rome timezone
+          // Create date with explicit Rome timezone offset
+          const eventDateStr = `${booking.date}T${booking.time}:00`;
+          // Parse as Rome time (UTC+1 in winter, UTC+2 in summer)
+          const eventDate = new Date(eventDateStr + '+01:00'); // Italy winter time
 
           if (eventDate >= minTime && eventDate <= maxTime) {
             console.log(`📩 Sending WhatsApp reminder for booking ${bookingId}`);
@@ -4672,12 +4977,15 @@ exports.createCityOperator = functions.https.onCall(async (data, context) => {
     });
 
     // Create operator document in Firestore
+    // Use both old format (assignedCityId) and new format (assignedCities array) for compatibility
     await db.collection('operators').doc(userRecord.uid).set({
       email: email,
       name: name,
       role: 'city_operator',
-      assignedCityId: cityId,
+      assignedCityId: cityId, // Keep for backward compatibility
       assignedCityName: cityName || cityId,
+      assignedCities: [cityId], // New array format for multi-city support
+      assignedCityNames: { [cityId]: cityName || cityId },
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       createdBy: context.auth.token.email || context.auth.uid
     });

@@ -8,14 +8,17 @@ import {
   doc,
   query,
   orderBy,
-  updateDoc
+  updateDoc,
+  where,
+  Timestamp
 } from 'firebase/firestore';
-import { FaPlus, FaEdit, FaSignOutAlt, FaCity, FaCalendarCheck, FaCopy, FaBell, FaBan, FaWhatsapp, FaUsers, FaChartBar } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaSignOutAlt, FaCity, FaCalendarCheck, FaCopy, FaBell, FaBan, FaWhatsapp, FaUsers, FaChartBar, FaCalendar, FaClock, FaStar } from 'react-icons/fa';
 import CityModal from '../../components/admin/CityModal';
 
 const Dashboard = () => {
   const [cities, setCities] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [cityViews, setCityViews] = useState({}); // { cityId: { total: N, future: N } }
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('available');
   const [selectedDates, setSelectedDates] = useState([]); // Array of selected dates
@@ -28,6 +31,8 @@ const Dashboard = () => {
   const [cityToCancel, setCityToCancel] = useState(null);
   const [cancelMessage, setCancelMessage] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelConfirmText, setCancelConfirmText] = useState('');
+  const [showPastBookings, setShowPastBookings] = useState(false);
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -47,6 +52,12 @@ const Dashboard = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Reset date filters when switching between future/past
+  useEffect(() => {
+    setSelectedDates([]);
+    setDateSearchTerm('');
+  }, [showPastBookings]);
 
   // Funzione per estrarre l'ultima data da una stringa di date
   const parseEventDate = (dateString) => {
@@ -98,13 +109,22 @@ const Dashboard = () => {
     let updatedCount = 0;
 
     for (const city of citiesData) {
-      const dateString = city.eventData?.dates;
-      if (!dateString || city.status === 'ended') continue;
+      // Check timeSlots for future dates (more reliable than parsing dates string)
+      const timeSlots = city.eventData?.timeSlots || [];
 
-      const eventDate = parseEventDate(dateString);
-      if (!eventDate) continue;
+      // If no timeSlots, skip this city
+      if (timeSlots.length === 0) continue;
 
-      if (eventDate < today) {
+      // Check if there are any future dates in timeSlots
+      const hasFutureDates = timeSlots.some(slot => {
+        if (!slot.date) return false;
+        const slotDate = new Date(slot.date);
+        slotDate.setHours(0, 0, 0, 0);
+        return slotDate >= today;
+      });
+
+      // If no future dates and status is available, mark as ended
+      if (!hasFutureDates && city.status === 'available') {
         try {
           await updateDoc(doc(db, 'cities', city.id), { status: 'ended' });
           city.status = 'ended'; // Update local data
@@ -113,10 +133,22 @@ const Dashboard = () => {
           console.error(`Error updating city ${city.name}:`, error);
         }
       }
+
+      // If has future dates but status is ended, mark as available
+      if (hasFutureDates && city.status !== 'available') {
+        try {
+          await updateDoc(doc(db, 'cities', city.id), { status: 'available' });
+          city.status = 'available'; // Update local data
+          updatedCount++;
+          console.log(`✅ ${city.name}: riattivato (date future trovate)`);
+        } catch (error) {
+          console.error(`Error updating city ${city.name}:`, error);
+        }
+      }
     }
 
     if (updatedCount > 0) {
-      console.log(`✅ Aggiornati automaticamente ${updatedCount} eventi passati`);
+      console.log(`✅ Aggiornati automaticamente ${updatedCount} eventi`);
     }
 
     return citiesData;
@@ -138,11 +170,73 @@ const Dashboard = () => {
       citiesData = await updatePastEvents(citiesData);
 
       setCities(citiesData);
+
+      // Carica le visite per ogni città (in background)
+      loadCityViews(citiesData);
     } catch (error) {
       console.error('Error loading cities:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Carica le visite dalla prima data futura per ogni città
+  const loadCityViews = async (citiesData) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const viewsMap = {};
+
+    // Process cities in parallel (batch of 5 to avoid rate limits)
+    const batchSize = 5;
+    for (let i = 0; i < citiesData.length; i += batchSize) {
+      const batch = citiesData.slice(i, i + batchSize);
+
+      await Promise.all(batch.map(async (city) => {
+        try {
+          // Trova la prima data futura dai timeSlots
+          const timeSlots = city.eventData?.timeSlots || [];
+          const futureDates = timeSlots
+            .filter(slot => {
+              if (!slot.date) return false;
+              const slotDate = new Date(slot.date);
+              slotDate.setHours(0, 0, 0, 0);
+              return slotDate >= today;
+            })
+            .map(slot => new Date(slot.date))
+            .sort((a, b) => a - b);
+
+          const firstFutureDate = futureDates.length > 0 ? futureDates[0] : null;
+
+          // Carica le visite dalla sotto-collezione
+          const viewsSnapshot = await getDocs(collection(db, 'cities', city.id, 'views'));
+          const totalViews = viewsSnapshot.size;
+
+          let futureViews = 0;
+          if (firstFutureDate) {
+            // Conta le visite con timestamp >= prima data futura
+            viewsSnapshot.docs.forEach(doc => {
+              const data = doc.data();
+              const viewTimestamp = data.t?.toDate?.() || data.t;
+              if (viewTimestamp && viewTimestamp >= firstFutureDate) {
+                futureViews++;
+              }
+            });
+          }
+
+          viewsMap[city.id] = {
+            total: totalViews,
+            future: futureViews,
+            firstFutureDate: firstFutureDate?.toISOString()
+          };
+        } catch (error) {
+          console.error(`Error loading views for ${city.id}:`, error);
+          viewsMap[city.id] = { total: city.views || 0, future: city.views || 0 };
+        }
+      }));
+    }
+
+    setCityViews(viewsMap);
   };
 
   const loadBookings = async () => {
@@ -162,6 +256,16 @@ const Dashboard = () => {
     }
   };
 
+  // Helper: verifica se una data è futura
+  const isFutureDate = (dateString) => {
+    if (!dateString) return false;
+    const eventDate = new Date(dateString);
+    const today = new Date();
+    eventDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return eventDate >= today;
+  };
+
   const handleOpenCancelModal = (city) => {
     setCityToCancel(city);
     setCancelMessage(`Siamo spiacenti di informarti che l'evento "${city.name}" è stato annullato. Ci scusiamo per il disagio.`);
@@ -170,6 +274,12 @@ const Dashboard = () => {
 
   const handleCancelEvent = async () => {
     if (!cityToCancel || !cancelMessage.trim()) return;
+
+    // Security check: require confirmation text
+    if (cancelConfirmText.toUpperCase() !== 'ANNULLA') {
+      alert('Per confermare l\'annullamento, digita "ANNULLA" nel campo di conferma.');
+      return;
+    }
 
     setIsCancelling(true);
 
@@ -236,6 +346,7 @@ const Dashboard = () => {
       setCancelModalOpen(false);
       setCityToCancel(null);
       setCancelMessage('');
+      setCancelConfirmText('');
 
     } catch (error) {
       console.error('Errore durante annullamento:', error);
@@ -278,8 +389,13 @@ const Dashboard = () => {
   };
 
 
-  // Get unique dates from bookings
-  const uniqueDates = [...new Set(bookings.map(b => b.date))].filter(Boolean).sort();
+  // Get unique dates from bookings (filtered by future/past)
+  const uniqueDates = [...new Set(bookings.map(b => b.date))]
+    .filter(date => {
+      if (!date) return false;
+      return showPastBookings ? !isFutureDate(date) : isFutureDate(date);
+    })
+    .sort((a, b) => showPastBookings ? new Date(b) - new Date(a) : new Date(a) - new Date(b));
 
   // Get all future event dates
   const getAllFutureDates = () => {
@@ -294,6 +410,11 @@ const Dashboard = () => {
   // Calculate stats for a city based on date filter
   const getCityStats = (cityId) => {
     let cityBookings = bookings.filter(b => b.cityId === cityId && b.status !== 'cancelled');
+
+    // Apply future/past filter
+    cityBookings = cityBookings.filter(b =>
+      showPastBookings ? !isFutureDate(b.date) : isFutureDate(b.date)
+    );
 
     // Apply date filter (if dates are selected, filter by those dates)
     if (selectedDates.length > 0) {
@@ -372,6 +493,11 @@ const Dashboard = () => {
   const getBookingStats = () => {
     let filteredBookings = bookings;
 
+    // Filter by future/past
+    filteredBookings = filteredBookings.filter(b =>
+      showPastBookings ? !isFutureDate(b.date) : isFutureDate(b.date)
+    );
+
     // Filter by dates
     if (selectedDates.length > 0) {
       filteredBookings = filteredBookings.filter(b => selectedDates.includes(b.date));
@@ -400,7 +526,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white shadow-sm pwa-safe-top">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex items-center">
@@ -443,6 +569,14 @@ const Dashboard = () => {
                 <span className="hidden sm:inline">Operatori</span>
                 <span className="sm:hidden">Op.</span>
               </button>
+              <button
+                onClick={() => navigate('/admin/reviews')}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-yellow-500 text-white text-sm rounded-lg hover:bg-yellow-600 transition-colors w-full sm:w-auto justify-center"
+              >
+                <FaStar />
+                <span className="hidden sm:inline">Recensioni</span>
+                <span className="sm:hidden">Rec.</span>
+              </button>
               <span className="text-xs sm:text-sm text-gray-600 hidden md:inline">
                 {currentUser?.email}
               </span>
@@ -470,7 +604,7 @@ const Dashboard = () => {
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-1">
-              Totale Prenotazioni
+              Prenotazioni {showPastBookings ? 'Passate' : 'Future'}
               {selectedDates.length > 0 && (
                 <span className="ml-2 text-xs text-blue-600">
                   ({selectedDates.length} {selectedDates.length === 1 ? 'data' : 'date'})
@@ -479,15 +613,12 @@ const Dashboard = () => {
             </div>
             <div className="text-3xl font-bold text-blue-600">{stats.bookings}</div>
             <div className="text-xs text-gray-500 mt-1">
-              {filter === 'all'
-                ? (selectedDates.length === 0 ? 'Tutte le città e date' : `Tutte le città • ${selectedDates.length} ${selectedDates.length === 1 ? 'data' : 'date'}`)
-                : (selectedDates.length === 0 ? `Città ${filter === 'available' ? 'disponibili' : 'terminate'}` : `${filter === 'available' ? 'Disponibili' : 'Terminate'} • ${selectedDates.length} ${selectedDates.length === 1 ? 'data' : 'date'}`)
-              }
+              {showPastBookings ? 'Eventi già conclusi' : 'Eventi in programma'}
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm text-gray-600 mb-1">
-              Totale Posti
+              Posti {showPastBookings ? 'Passati' : 'Prenotati'}
               {selectedDates.length > 0 && (
                 <span className="ml-2 text-xs text-purple-600">
                   ({selectedDates.length} {selectedDates.length === 1 ? 'data' : 'date'})
@@ -496,11 +627,36 @@ const Dashboard = () => {
             </div>
             <div className="text-3xl font-bold text-purple-600">{stats.spots}</div>
             <div className="text-xs text-gray-500 mt-1">
-              {filter === 'all'
-                ? (selectedDates.length === 0 ? 'Tutte le città e date' : `Tutte le città • ${selectedDates.length} ${selectedDates.length === 1 ? 'data' : 'date'}`)
-                : (selectedDates.length === 0 ? `Città ${filter === 'available' ? 'disponibili' : 'terminate'}` : `${filter === 'available' ? 'Disponibili' : 'Terminate'} • ${selectedDates.length} ${selectedDates.length === 1 ? 'data' : 'date'}`)
-              }
+              {showPastBookings ? 'Eventi già conclusi' : 'Eventi in programma'}
             </div>
+          </div>
+        </div>
+
+        {/* Future/Past Filter */}
+        <div className="bg-white rounded-lg shadow p-4 mb-6">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setShowPastBookings(false)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                !showPastBookings
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <FaCalendar />
+              Eventi Futuri ({bookings.filter(b => isFutureDate(b.date) && b.status !== 'cancelled').length})
+            </button>
+            <button
+              onClick={() => setShowPastBookings(true)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                showPastBookings
+                  ? 'bg-gray-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <FaClock />
+              Eventi Passati ({bookings.filter(b => !isFutureDate(b.date) && b.status !== 'cancelled').length})
+            </button>
           </div>
         </div>
 
@@ -790,13 +946,24 @@ const Dashboard = () => {
                       </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                        {city.views || 0}
+                      <span
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
+                        title={cityViews[city.id]?.firstFutureDate
+                          ? `Visite dal ${new Date(cityViews[city.id].firstFutureDate).toLocaleDateString('it-IT')} (totali: ${cityViews[city.id]?.total || 0})`
+                          : `Visite totali`
+                        }
+                      >
+                        {showPastBookings
+                          ? (cityViews[city.id]?.total || city.views || 0)
+                          : (cityViews[city.id]?.future ?? city.views ?? 0)
+                        }
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       {(() => {
-                        const views = city.views || 0;
+                        const views = showPastBookings
+                          ? (cityViews[city.id]?.total || city.views || 0)
+                          : (cityViews[city.id]?.future ?? city.views ?? 0);
                         const bookings = getCityStats(city.id).bookingsCount;
                         const rate = views > 0 ? ((bookings / views) * 100).toFixed(1) : 0;
                         return (
@@ -888,7 +1055,7 @@ const Dashboard = () => {
               </p>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Messaggio da inviare ai clienti:
               </label>
@@ -901,21 +1068,36 @@ const Dashboard = () => {
               />
             </div>
 
+            {/* Confirmation input */}
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+              <label className="block text-sm font-medium text-red-700 mb-2">
+                Per confermare, digita <span className="font-bold">ANNULLA</span>
+              </label>
+              <input
+                type="text"
+                value={cancelConfirmText}
+                onChange={(e) => setCancelConfirmText(e.target.value)}
+                placeholder="Digita ANNULLA per confermare"
+                className="w-full px-4 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 uppercase"
+              />
+            </div>
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => {
                   setCancelModalOpen(false);
                   setCityToCancel(null);
                   setCancelMessage('');
+                  setCancelConfirmText('');
                 }}
                 className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
                 disabled={isCancelling}
               >
-                Annulla
+                Chiudi
               </button>
               <button
                 onClick={handleCancelEvent}
-                disabled={isCancelling || !cancelMessage.trim()}
+                disabled={isCancelling || !cancelMessage.trim() || cancelConfirmText.toUpperCase() !== 'ANNULLA'}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isCancelling ? (
