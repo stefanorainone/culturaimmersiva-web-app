@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaMapMarkerAlt, FaHandshake, FaPaperPlane, FaUsers, FaRocket } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaHandshake, FaPaperPlane } from 'react-icons/fa';
 
 const LavoraConNoi = () => {
   const [formData, setFormData] = useState({
@@ -46,154 +46,90 @@ ${formData.message}`;
     }, 500);
   };
 
-  const positions = [
-    {
-      icon: <FaMapMarkerAlt className="text-4xl text-secondary" />,
-      title: 'Gestione Eventi',
-      description: 'Cerchiamo persone dinamiche per gestire i nostri eventi sul territorio. Ti occuperai dell\'accoglienza dei visitatori e della gestione delle esperienze VR.',
-    },
-    {
-      icon: <FaHandshake className="text-4xl text-secondary" />,
-      title: 'Sviluppo Commerciale',
-      description: 'Cerchiamo figure commerciali per proporre le nostre esperienze a musei, istituzioni culturali, scuole e aziende nella tua zona.',
-    },
-  ];
-
   return (
     <div className="bg-white">
       {/* Hero */}
-      <section className="bg-gradient-to-r from-primary to-primary-dark text-white py-20">
+      <section className="bg-gradient-to-r from-primary to-primary-dark text-white py-16">
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto text-center"
+            className="max-w-3xl mx-auto text-center"
           >
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Lavora con Noi
             </h1>
-            <p className="text-xl md:text-2xl">
-              Entra nel team di Cultura Immersiva e porta l'arte nelle città italiane
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Intro */}
-      <section className="py-16 bg-gray-50">
-        <div className="container-custom">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto text-center"
-          >
-            <div className="flex justify-center mb-6">
-              <FaRocket className="text-5xl text-secondary" />
-            </div>
-            <h2 className="text-3xl font-bold text-primary mb-6">Stiamo crescendo</h2>
-            <p className="text-lg text-gray-700 leading-relaxed mb-4">
-              <strong>Cultura Immersiva</strong> porta esperienze di realtà virtuale in oltre 50 città italiane.
-              Stiamo cercando persone appassionate per ampliare il nostro team sul territorio.
-            </p>
-            <p className="text-lg text-gray-700 leading-relaxed">
-              Se ami la cultura, hai spirito di iniziativa e vuoi far parte di un progetto innovativo,
-              questa è l'opportunità che fa per te.
+            <p className="text-lg md:text-xl">
+              Stiamo cercando persone per ampliare il nostro team sul territorio italiano
             </p>
           </motion.div>
         </div>
       </section>
 
       {/* Posizioni */}
-      <section className="py-16">
+      <section className="py-12">
         <div className="container-custom">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl font-bold text-primary mb-4">Chi cerchiamo</h2>
-            <p className="text-lg text-gray-600">
-              Due opportunità per entrare nel nostro team
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {positions.map((position, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white p-8 rounded-lg shadow-lg border border-gray-100 hover:shadow-xl transition-shadow"
-              >
-                <div className="text-center">
-                  <div className="flex justify-center mb-4">{position.icon}</div>
-                  <h3 className="text-xl font-bold text-primary mb-3">{position.title}</h3>
-                  <p className="text-gray-600">{position.description}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white p-6 rounded-lg shadow-lg border border-gray-100"
+            >
+              <div className="flex items-start gap-4">
+                <FaMapMarkerAlt className="text-3xl text-secondary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="text-lg font-bold text-primary mb-2">Gestione Eventi</h3>
+                  <p className="text-gray-600 text-sm">
+                    Gestione dei nostri eventi sul territorio: accoglienza visitatori e gestione delle esperienze VR.
+                  </p>
                 </div>
-              </motion.div>
-            ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="bg-white p-6 rounded-lg shadow-lg border border-gray-100"
+            >
+              <div className="flex items-start gap-4">
+                <FaHandshake className="text-3xl text-secondary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="text-lg font-bold text-primary mb-2">Sviluppo Partnership</h3>
+                  <p className="text-gray-600 text-sm">
+                    Proporre le nostre esperienze a comuni, associazioni, musei, istituzioni e scuole per lo sviluppo di nuovi progetti.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Cosa offriamo */}
-      <section className="py-16 bg-gray-50">
-        <div className="container-custom">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto"
-          >
-            <h2 className="text-3xl font-bold text-primary mb-8 text-center">Cosa offriamo</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow text-center">
-                <FaUsers className="text-3xl text-secondary mx-auto mb-3" />
-                <h3 className="font-bold text-primary mb-2">Formazione</h3>
-                <p className="text-gray-600 text-sm">Ti formiamo su tecnologie VR e gestione eventi</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow text-center">
-                <FaMapMarkerAlt className="text-3xl text-secondary mx-auto mb-3" />
-                <h3 className="font-bold text-primary mb-2">Flessibilità</h3>
-                <p className="text-gray-600 text-sm">Lavori nella tua città con orari flessibili</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow text-center">
-                <FaRocket className="text-3xl text-secondary mx-auto mb-3" />
-                <h3 className="font-bold text-primary mb-2">Crescita</h3>
-                <p className="text-gray-600 text-sm">Opportunità di crescere con noi</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
       {/* Form Candidatura */}
-      <section className="py-16">
+      <section className="py-12 bg-gray-50">
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="max-w-2xl mx-auto"
+            className="max-w-xl mx-auto"
           >
             <div className="bg-white rounded-lg shadow-xl p-8">
-              <h2 className="text-3xl font-bold text-primary mb-2 text-center">Candidati ora</h2>
-              <p className="text-gray-600 text-center mb-8">Compila il form e ti contatteremo</p>
+              <h2 className="text-2xl font-bold text-primary mb-6 text-center">Candidati</h2>
 
               {submitMessage && (
-                <div className="mb-6 p-4 bg-blue-100 text-blue-700 rounded-lg">
+                <div className="mb-6 p-4 bg-blue-100 text-blue-700 rounded-lg text-sm">
                   {submitMessage}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                       Nome e Cognome *
                     </label>
                     <input
@@ -203,13 +139,13 @@ ${formData.message}`;
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                       placeholder="Il tuo nome"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
                       Città *
                     </label>
                     <input
@@ -219,15 +155,15 @@ ${formData.message}`;
                       value={formData.city}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                       placeholder="La tua città"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                       Email *
                     </label>
                     <input
@@ -237,13 +173,13 @@ ${formData.message}`;
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                       placeholder="tua@email.com"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                       Telefono *
                     </label>
                     <input
@@ -253,14 +189,14 @@ ${formData.message}`;
                       value={formData.phone}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                       placeholder="+39 123 456 7890"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
                     Ruolo di interesse *
                   </label>
                   <select
@@ -269,17 +205,17 @@ ${formData.message}`;
                     value={formData.role}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                   >
                     <option value="">Seleziona...</option>
                     <option value="Gestione Eventi">Gestione Eventi</option>
-                    <option value="Sviluppo Commerciale">Sviluppo Commerciale</option>
+                    <option value="Sviluppo Partnership">Sviluppo Partnership</option>
                     <option value="Entrambi">Entrambi</option>
                   </select>
                 </div>
 
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                     Presentati brevemente *
                   </label>
                   <textarea
@@ -288,9 +224,9 @@ ${formData.message}`;
                     value={formData.message}
                     onChange={handleChange}
                     required
-                    rows="4"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                    placeholder="Raccontaci chi sei e perché vorresti lavorare con noi..."
+                    rows="3"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none text-sm"
+                    placeholder="Raccontaci chi sei..."
                   ></textarea>
                 </div>
 
@@ -300,10 +236,7 @@ ${formData.message}`;
                   className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
-                    <>
-                      <span className="animate-spin">⏳</span>
-                      Apertura email...
-                    </>
+                    'Apertura email...'
                   ) : (
                     <>
                       <FaPaperPlane />
