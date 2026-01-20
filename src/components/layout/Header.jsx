@@ -12,14 +12,14 @@ const Header = () => {
     { path: '/musei', label: 'Musei' },
     { path: '/hotel', label: 'Hotel / B&B' },
     { path: '/blog', label: 'Blog' },
-    { path: '/news', label: 'News' },
     { path: '/contatti', label: 'Contatti' },
+    { path: '/lavora-con-noi', label: 'Lavora con Noi' },
   ];
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <header className="bg-primary text-white sticky top-0 z-50 shadow-lg">
+    <header className="bg-primary text-white sticky top-0 z-50 shadow-lg pwa-safe-top">
       <nav className="container-custom">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
