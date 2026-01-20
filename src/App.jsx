@@ -5,7 +5,6 @@ import ScrollToTop from './components/ScrollToTop';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
-import PWAUpdatePrompt from './components/PWAUpdatePrompt';
 import Home from './pages/Home';
 import Cities from './pages/Cities';
 import CityDetail from './pages/CityDetail';
@@ -49,7 +48,6 @@ const NewsSlugRedirect = () => {
 function App() {
   return (
     <>
-      <PWAUpdatePrompt />
       <Router>
         <ScrollToTop />
         <AuthProvider>

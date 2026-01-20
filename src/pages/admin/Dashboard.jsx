@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { FaPlus, FaEdit, FaSignOutAlt, FaCity, FaCalendarCheck, FaCopy, FaBell, FaBan, FaWhatsapp, FaUsers, FaChartBar, FaCalendar, FaClock, FaStar } from 'react-icons/fa';
 import CityModal from '../../components/admin/CityModal';
+import PWAUpdatePrompt from '../../components/PWAUpdatePrompt';
 
 const Dashboard = () => {
   const [cities, setCities] = useState([]);
@@ -525,6 +526,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <PWAUpdatePrompt />
       {/* Header */}
       <header className="bg-white shadow-sm pwa-safe-top">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
