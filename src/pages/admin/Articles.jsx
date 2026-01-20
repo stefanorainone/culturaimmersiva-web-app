@@ -356,6 +356,7 @@ const AdminArticles = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Titolo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stato</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Views</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Azioni</th>
                 </tr>
@@ -393,6 +394,9 @@ const AdminArticles = () => {
                         {article.published ? <FaEye /> : <FaEyeSlash />}
                         {article.published ? 'Pubblicato' : 'Bozza'}
                       </button>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                      {article.views || 0}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {formatDate(article.publishedAt || article.createdAt)}

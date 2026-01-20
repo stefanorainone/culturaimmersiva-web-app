@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { db } from '../config/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { FaCalendar, FaClock, FaArrowLeft, FaLinkedin, FaFacebook, FaTwitter, FaList, FaWhatsapp } from 'react-icons/fa';
+import { collection, query, where, getDocs, limit, doc, updateDoc, increment } from 'firebase/firestore';
+import { FaCalendar, FaClock, FaArrowLeft, FaLinkedin, FaFacebook, FaList, FaWhatsapp } from 'react-icons/fa';
 import DOMPurify from 'dompurify';
 
 const BlogArticle = () => {
@@ -32,6 +32,15 @@ const BlogArticle = () => {
       }
 
       const articleData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+
+      // Increment view count
+      try {
+        await updateDoc(doc(db, 'articles', articleData.id), {
+          views: increment(1)
+        });
+      } catch (e) {
+        console.log('Could not increment view count');
+      }
 
       // Redirect to news page if this is a news article
       if (articleData.type === 'news') {
@@ -431,39 +440,6 @@ const BlogArticle = () => {
               }
             `}</style>
 
-            {/* Share Buttons */}
-            <div className="border-t border-gray-200 pt-8 mt-8">
-              <p className="text-gray-600 mb-4 font-semibold">Condividi questo articolo:</p>
-              <div className="flex flex-wrap gap-3">
-                <a
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#0077b5] text-white rounded-lg hover:bg-[#006396] transition-colors text-sm font-medium"
-                >
-                  <FaLinkedin />
-                  LinkedIn
-                </a>
-                <a
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#1877f2] text-white rounded-lg hover:bg-[#166fe5] transition-colors text-sm font-medium"
-                >
-                  <FaFacebook />
-                  Facebook
-                </a>
-                <a
-                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(article.title)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#1da1f2] text-white rounded-lg hover:bg-[#1a91da] transition-colors text-sm font-medium"
-                >
-                  <FaTwitter />
-                  Twitter
-                </a>
-              </div>
-            </div>
           </div>
         </article>
 
@@ -483,6 +459,31 @@ const BlogArticle = () => {
             <FaWhatsapp className="text-xl" />
             Scrivici su WhatsApp
           </a>
+        </div>
+
+        {/* Share Buttons */}
+        <div className="mt-8 text-center">
+          <p className="text-gray-600 mb-4 font-semibold">Condividi questo articolo:</p>
+          <div className="flex justify-center flex-wrap gap-3">
+            <a
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-[#0077b5] text-white rounded-lg hover:bg-[#006396] transition-colors text-sm font-medium"
+            >
+              <FaLinkedin />
+              LinkedIn
+            </a>
+            <a
+              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-[#1877f2] text-white rounded-lg hover:bg-[#166fe5] transition-colors text-sm font-medium"
+            >
+              <FaFacebook />
+              Facebook
+            </a>
+          </div>
         </div>
 
         {/* Related Articles */}

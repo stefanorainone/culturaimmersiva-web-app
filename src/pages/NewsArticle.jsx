@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { db } from '../config/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { FaCalendar, FaArrowLeft, FaLinkedin, FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
+import { collection, query, where, getDocs, limit, doc, updateDoc, increment } from 'firebase/firestore';
+import { FaCalendar, FaArrowLeft, FaLinkedin, FaFacebook, FaWhatsapp } from 'react-icons/fa';
 import DOMPurify from 'dompurify';
 
 const NewsArticle = () => {
@@ -19,31 +19,41 @@ const NewsArticle = () => {
   useEffect(() => {
     // Add structured data for Google News
     if (article) {
+      const baseUrl = 'https://culturaimmersiva.it';
+      const fullImageUrl = article.coverImage?.startsWith('http')
+        ? article.coverImage
+        : `${baseUrl}${article.coverImage}`;
+
       const structuredData = {
         "@context": "https://schema.org",
         "@type": "NewsArticle",
         "headline": article.title,
         "description": article.metaDescription || article.excerpt,
-        "image": article.coverImage ? [article.coverImage] : [],
+        "image": fullImageUrl ? [fullImageUrl] : [],
         "datePublished": article.publishedAt,
         "dateModified": article.updatedAt || article.publishedAt,
         "author": {
           "@type": "Organization",
           "name": "Cultura Immersiva",
-          "url": "https://culturaimmersiva.it"
+          "url": baseUrl
         },
         "publisher": {
           "@type": "Organization",
           "name": "Cultura Immersiva",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://culturaimmersiva.it/logo.png"
+            "url": `${baseUrl}/images/logo-cultura-immersiva.png`,
+            "width": 600,
+            "height": 60
           }
         },
         "mainEntityOfPage": {
           "@type": "WebPage",
-          "@id": `https://culturaimmersiva.it/news/${article.slug}`
-        }
+          "@id": `${baseUrl}/news/${article.slug}`
+        },
+        "articleSection": article.category || "News",
+        "keywords": article.metaKeywords || "",
+        "inLanguage": "it-IT"
       };
 
       // Remove existing script if any
@@ -86,6 +96,16 @@ const NewsArticle = () => {
       }
 
       const articleData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+
+      // Increment view count
+      try {
+        await updateDoc(doc(db, 'articles', articleData.id), {
+          views: increment(1)
+        });
+      } catch (e) {
+        console.log('Could not increment view count');
+      }
+
       setArticle(articleData);
 
       // Update page title and meta
@@ -99,6 +119,21 @@ const NewsArticle = () => {
         document.head.appendChild(metaDescription);
       }
       metaDescription.content = articleData.metaDescription || articleData.excerpt || '';
+
+      // Update meta keywords
+      let metaKeywords = document.querySelector('meta[name="keywords"]');
+      if (!metaKeywords) {
+        metaKeywords = document.createElement('meta');
+        metaKeywords.name = 'keywords';
+        document.head.appendChild(metaKeywords);
+      }
+      metaKeywords.content = articleData.metaKeywords || '';
+
+      // Base URL for absolute paths
+      const baseUrl = 'https://culturaimmersiva.it';
+      const fullImageUrl = articleData.coverImage?.startsWith('http')
+        ? articleData.coverImage
+        : `${baseUrl}${articleData.coverImage}`;
 
       // Update Open Graph tags
       let ogTitle = document.querySelector('meta[property="og:title"]');
@@ -125,6 +160,14 @@ const NewsArticle = () => {
       }
       ogType.content = 'article';
 
+      let ogUrl = document.querySelector('meta[property="og:url"]');
+      if (!ogUrl) {
+        ogUrl = document.createElement('meta');
+        ogUrl.setAttribute('property', 'og:url');
+        document.head.appendChild(ogUrl);
+      }
+      ogUrl.content = `${baseUrl}/news/${articleData.slug}`;
+
       if (articleData.coverImage) {
         let ogImage = document.querySelector('meta[property="og:image"]');
         if (!ogImage) {
@@ -132,7 +175,59 @@ const NewsArticle = () => {
           ogImage.setAttribute('property', 'og:image');
           document.head.appendChild(ogImage);
         }
-        ogImage.content = articleData.coverImage;
+        ogImage.content = fullImageUrl;
+      }
+
+      // Article specific meta tags
+      let articlePublished = document.querySelector('meta[property="article:published_time"]');
+      if (!articlePublished) {
+        articlePublished = document.createElement('meta');
+        articlePublished.setAttribute('property', 'article:published_time');
+        document.head.appendChild(articlePublished);
+      }
+      articlePublished.content = articleData.publishedAt;
+
+      let articleAuthor = document.querySelector('meta[property="article:author"]');
+      if (!articleAuthor) {
+        articleAuthor = document.createElement('meta');
+        articleAuthor.setAttribute('property', 'article:author');
+        document.head.appendChild(articleAuthor);
+      }
+      articleAuthor.content = 'Cultura Immersiva';
+
+      // Twitter Card tags
+      let twitterCard = document.querySelector('meta[name="twitter:card"]');
+      if (!twitterCard) {
+        twitterCard = document.createElement('meta');
+        twitterCard.name = 'twitter:card';
+        document.head.appendChild(twitterCard);
+      }
+      twitterCard.content = 'summary_large_image';
+
+      let twitterTitle = document.querySelector('meta[name="twitter:title"]');
+      if (!twitterTitle) {
+        twitterTitle = document.createElement('meta');
+        twitterTitle.name = 'twitter:title';
+        document.head.appendChild(twitterTitle);
+      }
+      twitterTitle.content = articleData.title;
+
+      let twitterDesc = document.querySelector('meta[name="twitter:description"]');
+      if (!twitterDesc) {
+        twitterDesc = document.createElement('meta');
+        twitterDesc.name = 'twitter:description';
+        document.head.appendChild(twitterDesc);
+      }
+      twitterDesc.content = articleData.metaDescription || articleData.excerpt || '';
+
+      if (articleData.coverImage) {
+        let twitterImage = document.querySelector('meta[name="twitter:image"]');
+        if (!twitterImage) {
+          twitterImage = document.createElement('meta');
+          twitterImage.name = 'twitter:image';
+          document.head.appendChild(twitterImage);
+        }
+        twitterImage.content = fullImageUrl;
       }
 
       // Load related news
@@ -297,39 +392,6 @@ const NewsArticle = () => {
               }
             `}</style>
 
-            {/* Share Buttons */}
-            <div className="border-t border-gray-200 pt-6 mt-6">
-              <p className="text-gray-600 mb-4 font-semibold">Condividi:</p>
-              <div className="flex flex-wrap gap-3">
-                <a
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 bg-[#0077b5] text-white rounded-lg hover:bg-[#006396] transition-colors text-sm font-medium"
-                >
-                  <FaLinkedin />
-                  LinkedIn
-                </a>
-                <a
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 bg-[#1877f2] text-white rounded-lg hover:bg-[#166fe5] transition-colors text-sm font-medium"
-                >
-                  <FaFacebook />
-                  Facebook
-                </a>
-                <a
-                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(article.title)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-2 bg-[#1da1f2] text-white rounded-lg hover:bg-[#1a91da] transition-colors text-sm font-medium"
-                >
-                  <FaTwitter />
-                  Twitter
-                </a>
-              </div>
-            </div>
           </div>
         </article>
 
@@ -348,6 +410,31 @@ const NewsArticle = () => {
             <FaWhatsapp className="text-xl" />
             Scrivici su WhatsApp
           </a>
+        </div>
+
+        {/* Share Buttons */}
+        <div className="mt-8 text-center">
+          <p className="text-gray-600 mb-4 font-semibold">Condividi questo articolo:</p>
+          <div className="flex justify-center flex-wrap gap-3">
+            <a
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-[#0077b5] text-white rounded-lg hover:bg-[#006396] transition-colors text-sm font-medium"
+            >
+              <FaLinkedin />
+              LinkedIn
+            </a>
+            <a
+              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-[#1877f2] text-white rounded-lg hover:bg-[#166fe5] transition-colors text-sm font-medium"
+            >
+              <FaFacebook />
+              Facebook
+            </a>
+          </div>
         </div>
 
         {/* Related News */}
