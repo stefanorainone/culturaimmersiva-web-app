@@ -152,6 +152,14 @@ service cloud.firestore {
       allow update, delete: if request.auth != null;
     }
 
+    // Candidature collection (job applications)
+    match /candidature/{candidaturaId} {
+      // Everyone can create (public form)
+      allow create: if true;
+      // Only admin can read, update, delete
+      allow read, update, delete: if request.auth != null;
+    }
+
     // Block all other collections by default
     match /{document=**} {
       allow read, write: if false;

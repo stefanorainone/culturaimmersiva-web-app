@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaMapMarkerAlt, FaHandshake, FaPaperPlane } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaHandshake, FaPaperPlane, FaCheck } from 'react-icons/fa';
+import { db } from '../config/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
 const LavoraConNoi = () => {
   const [formData, setFormData] = useState({
@@ -13,7 +15,8 @@ const LavoraConNoi = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,24 +29,21 @@ const LavoraConNoi = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError('');
 
-    const subject = `Candidatura - ${formData.role || 'Lavora con noi'}`;
-    const body = `Nome: ${formData.name}
-Email: ${formData.email}
-Telefono: ${formData.phone || 'Non specificato'}
-Città: ${formData.city || 'Non specificata'}
-Ruolo di interesse: ${formData.role || 'Non specificato'}
-
-Presentazione:
-${formData.message}`;
-
-    const mailtoLink = `mailto:lavoro@culturaimmersiva.it?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoLink;
-
-    setTimeout(() => {
+    try {
+      await addDoc(collection(db, 'candidature'), {
+        ...formData,
+        createdAt: new Date().toISOString(),
+        status: 'new'
+      });
+      setSubmitted(true);
+    } catch (err) {
+      console.error('Error submitting application:', err);
+      setError('Errore nell\'invio. Riprova o contattaci direttamente.');
+    } finally {
       setIsSubmitting(false);
-      setSubmitMessage('Si aprirà il tuo client email per inviare la candidatura.');
-    }, 500);
+    }
   };
 
   return (
@@ -120,9 +120,19 @@ ${formData.message}`;
             <div className="bg-white rounded-lg shadow-xl p-8">
               <h2 className="text-2xl font-bold text-primary mb-6 text-center">Candidati</h2>
 
-              {submitMessage && (
-                <div className="mb-6 p-4 bg-blue-100 text-blue-700 rounded-lg text-sm">
-                  {submitMessage}
+              {submitted ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FaCheck className="text-green-600 text-2xl" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">Candidatura inviata!</h3>
+                  <p className="text-gray-600">Ti contatteremo al più presto.</p>
+                </div>
+              ) : (
+              <>
+              {error && (
+                <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg text-sm">
+                  {error}
                 </div>
               )}
 
@@ -236,7 +246,7 @@ ${formData.message}`;
                   className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
-                    'Apertura email...'
+                    'Invio in corso...'
                   ) : (
                     <>
                       <FaPaperPlane />
@@ -245,6 +255,8 @@ ${formData.message}`;
                   )}
                 </button>
               </form>
+              </>
+              )}
             </div>
           </motion.div>
         </div>

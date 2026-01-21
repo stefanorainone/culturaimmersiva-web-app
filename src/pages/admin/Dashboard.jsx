@@ -579,6 +579,14 @@ const Dashboard = () => {
                 <span className="hidden sm:inline">Recensioni</span>
                 <span className="sm:hidden">Rec.</span>
               </button>
+              <button
+                onClick={() => navigate('/admin/candidature')}
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 transition-colors w-full sm:w-auto justify-center"
+              >
+                <FaUsers />
+                <span className="hidden sm:inline">Candidature</span>
+                <span className="sm:hidden">Cand.</span>
+              </button>
               <span className="text-xs sm:text-sm text-gray-600 hidden md:inline">
                 {currentUser?.email}
               </span>

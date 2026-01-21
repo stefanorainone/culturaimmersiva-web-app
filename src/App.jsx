@@ -38,6 +38,7 @@ import Review from './pages/Review';
 import LavoraConNoi from './pages/LavoraConNoi';
 import AdminNoShowFeedback from './pages/admin/NoShowFeedback';
 import AdminReviews from './pages/admin/Reviews';
+import AdminCandidature from './pages/admin/Candidature';
 
 // Redirect component for /news/:slug to /blog/:slug
 const NewsSlugRedirect = () => {
@@ -154,6 +155,11 @@ function App() {
           <Route path="/admin/reviews" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminReviews />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/candidature" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminCandidature />
             </ProtectedRoute>
           } />
         </Routes>
