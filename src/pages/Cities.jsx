@@ -29,10 +29,10 @@ const Cities = () => {
         const uniqueRegions = [...new Set(loadedCities.map(city => city.region).filter(Boolean))].sort();
         setRegions(['Tutte', ...uniqueRegions]);
 
-        // Create availability map
+        // Create availability map (true = available, false = not available)
         const availability = {};
         loadedCities.forEach(city => {
-          availability[city.id] = city.status || 'available';
+          availability[city.id] = city.status === 'available';
         });
         setAvailabilityMap(availability);
       } catch (error) {
@@ -122,7 +122,7 @@ const Cities = () => {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {sortedCities.map((city) => {
-                  const cityStatus = availabilityMap[city.id] || city.status || 'available';
+                  const cityStatus = city.status || 'available';
 
                   const getStatusBadge = (status) => {
                     switch (status) {
